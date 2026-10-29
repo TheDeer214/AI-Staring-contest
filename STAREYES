@@ -1,437 +1,314 @@
--- ⬜ Snippet 1: Services, Variables, and State Initialization
+-- ⬜ Snippet 1: UI Initialization and Main/Toggle Frames
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local Workspace = game:GetService("Workspace")
-local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
-local localPlayer = Players.LocalPlayer
-local camera = Workspace.CurrentCamera
-
--- State Variables
-local staringEnabled = true
-local accuracy = 0         -- 0 to 1
-local constraints = 0.5    -- 0% to 100% (0.5 default)
-local highlightEnabled = true
-local countWalls = true
-local selectedTeams = {}
-local highlightsTable = {}
-
-local isTeamsViewOpen = false
-
--- ⬜ Snippet 2: Floating Toggle Button and Main GUI Structure
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "StaringContestGui"
 screenGui.ResetOnSpawn = false
-screenGui.Parent = localPlayer:WaitForChild("PlayerGui")
+screenGui.Parent = PlayerGui
 
--- Draggable "👁️" Toggle Button
+-- Small Draggable Toggle Button (Top Left)
 local toggleBtn = Instance.new("TextButton")
-toggleBtn.Size = UDim2.new(0, 45, 0, 45)
+toggleBtn.Name = "ToggleMainGui"
+toggleBtn.Size = UDim2.new(0, 40, 0, 40)
 toggleBtn.Position = UDim2.new(0, 10, 0, 10)
 toggleBtn.Text = "👁️"
-toggleBtn.TextSize = 22
-toggleBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+toggleBtn.TextSize = 20
+toggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 toggleBtn.Parent = screenGui
 
-local corner1 = Instance.new("UICorner", toggleBtn)
-corner1.CornerRadius = UDim.new(0, 8)
-
--- Make toggle button draggable (Mobile & PC friendly)
-local dragging, dragInput, dragStart, startPos
-toggleBtn.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		dragging = true
-		dragStart = input.Position
-		startPos = toggleBtn.Position
-		input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then
-				dragging = false
-			end
-		end)
-	end
-end)
-UserInputService.InputChanged:Connect(function(input)
-	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		local delta = input.Position - dragStart
-		toggleBtn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-	end
-end)
-
--- Main Scrollable GUI
+-- Main GUI Frame (Scrollable)
 local mainFrame = Instance.new("ScrollingFrame")
-mainFrame.Size = UDim2.new(0, 280, 0, 340)
-mainFrame.Position = UDim2.new(0, 10, 0, 65)
-mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 300, 0, 400)
+mainFrame.Position = UDim2.new(0, 10, 0, 60)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 mainFrame.BorderSizePixel = 0
-mainFrame.Visible = true
-mainFrame.CanvasSize = UDim2.new(0, 0, 0, 450)
+mainFrame.CanvasSize = UDim2.new(0, 0, 0, 500)
 mainFrame.ScrollBarThickness = 6
+mainFrame.Visible = true
 mainFrame.Parent = screenGui
 
-local corner2 = Instance.new("UICorner", mainFrame)
-corner2.CornerRadius = UDim.new(0, 10)
+-- Make toggle button draggable for mobile
+local dragging, dragInput, dragStart, startPos
+toggleBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = toggleBtn.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+toggleBtn.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        toggleBtn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
 
 toggleBtn.MouseButton1Click:Connect(function()
-	mainFrame.Visible = not mainFrame.Visible
+    mainFrame.Visible = not mainFrame.Visible
 end)
 
--- ⬜ Snippet 3: Controls, Sliders, and Options UI
-local uiLayout = Instance.new("UIListLayout", mainFrame)
-uiLayout.SortOrder = Enum.SortOrder.LayoutOrder
-uiLayout.Padding = UDim.new(0, 10)
-uiLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+-- ⬜ Snippet 2: Main Menu Elements (Toggles and Sliders with Inputs)
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Padding = UDim.new(0, 10)
+UIListLayout.Parent = mainFrame
 
-local function createPadding(parent)
-	local pad = Instance.new("UIPadding", parent)
-	pad.PaddingTop = UDim.new(0, 10)
-	pad.PaddingLeft = UDim.new(0, 10)
-	pad.PaddingRight = UDim.new(0, 10)
-end
-createPadding(mainFrame)
+-- State Variables
+local settingsData = {
+    enableStaring = true,
+    accuracy = 0,
+    constraints = 50,
+    highlightAll = true,
+    countWalls = true
+}
 
--- 1. Enable Staring Contest Toggle
-local stareToggleBtn = Instance.new("TextButton")
-stareToggleBtn.Size = UDim2.new(1, 0, 0, 35)
-stareToggleBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
-stareToggleBtn.Text = "Enable Staring Contest: ON"
-stareToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-stareToggleBtn.Font = Enum.Font.SourceSansBold
-stareToggleBtn.TextSize = 14
-stareToggleBtn.Parent = mainFrame
-Instance.new("UICorner", stareToggleBtn).CornerRadius = UDim.new(0, 6)
-
-stareToggleBtn.MouseButton1Click:Connect(function()
-	staringEnabled = not staringEnabled
-	stareToggleBtn.Text = "Enable Staring Contest: " .. (staringEnabled and "ON" or "OFF")
-	stareToggleBtn.BackgroundColor3 = staringEnabled and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(170, 0, 0)
-end)
-
--- 2. Open Teams Button
-local openTeamsBtn = Instance.new("TextButton")
-openTeamsBtn.Size = UDim2.new(1, 0, 0, 35)
-openTeamsBtn.BackgroundColor3 = Color3.fromRGB(70, 130, 180)
-openTeamsBtn.Text = "Open Teams"
-openTeamsBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-openTeamsBtn.Font = Enum.Font.SourceSansBold
-openTeamsBtn.TextSize = 14
-openTeamsBtn.Parent = mainFrame
-Instance.new("UICorner", openTeamsBtn).CornerRadius = UDim.new(0, 6)
-
--- Helper to build standard sliders with direct input boxes
-local function createSlider(name, min, max, step, defaultVal, callback)
-	local container = Instance.new("Frame")
-	container.Size = UDim2.new(1, 0, 0, 50)
-	container.BackgroundTransparency = 1
-	container.Parent = mainFrame
-
-	local label = Instance.new("TextLabel")
-	label.Size = UDim2.new(1, 0, 0, 20)
-	label.BackgroundTransparency = 1
-	label.Text = name .. ": " .. tostring(defaultVal)
-	label.TextColor3 = Color3.fromRGB(255, 255, 255)
-	label.Font = Enum.Font.SourceSans
-	label.TextSize = 14
-	label.TextXAlignment = Enum.TextXAlignment.Left
-	label.Parent = container
-
-	local sliderBar = Instance.new("TextButton")
-	sliderBar.Size = UDim2.new(1, -50, 0, 6)
-	sliderBar.Position = UDim2.new(0, 0, 0, 30)
-	sliderBar.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-	sliderBar.Text = ""
-	sliderBar.Parent = container
-	Instance.new("UICorner", sliderBar).CornerRadius = UDim.new(1, 0)
-
-	local sliderFill = Instance.new("Frame")
-	sliderFill.Size = UDim2.new((defaultVal - min)/(max - min), 0, 1, 0)
-	sliderFill.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
-	sliderFill.BorderSizePixel = 0
-	sliderFill.Parent = sliderBar
-	Instance.new("UICorner", sliderFill).CornerRadius = UDim.new(1, 0)
-
-	local inputVal = Instance.new("TextBox")
-	inputVal.Size = UDim2.new(0, 40, 0, 24)
-	inputVal.Position = UDim2.new(1, -40, 0, 20)
-	inputVal.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-	inputVal.Text = tostring(defaultVal)
-	inputVal.TextColor3 = Color3.fromRGB(255, 255, 255)
-	inputVal.TextSize = 12
-	inputVal.Parent = container
-	Instance.new("UICorner", inputVal).CornerRadius = UDim.new(0, 4)
-
-	local function updateValue(val)
-		val = math.clamp(val, min, max)
-		if step > 0 then
-			val = math.round(val / step) * step
-		end
-		-- Fix floating point issues
-		val = tonumber(string.format("%.2f", val))
-		
-		sliderFill.Size = UDim2.new((val - min)/(max - min), 0, 1, 0)
-		label.Text = name .. ": " .. tostring(val)
-		inputVal.Text = tostring(val)
-		callback(val)
-	end
-
-	local sliding = false
-	sliderBar.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			sliding = true
-		end
-	end)
-	UserInputService.InputEnded:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			sliding = false
-		end
-	end)
-	UserInputService.InputChanged:Connect(function(input)
-		if sliding and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-			local pos = math.clamp((input.Position.X - sliderBar.AbsolutePosition.X) / sliderBar.AbsoluteSize.X, 0, 1)
-			updateValue(min + (max - min) * pos)
-		end
-	end)
-
-	inputVal.FocusLost:Connect(function()
-		local num = tonumber(inputVal.Text)
-		if num then
-			updateValue(num)
-		else
-			inputVal.Text = label.Text:match(": (.*)")
-		end
-	end)
+-- Helper function to create toggles
+local function createToggle(name, default, callback)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, -10, 0, 40)
+    frame.BackgroundTransparency = 1
+    
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.7, 0, 1, 0)
+    label.Text = name
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.BackgroundTransparency = 1
+    label.Parent = frame
+    
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 60, 0, 30)
+    btn.Position = UDim2.new(0.8, 0, 0.15, 0)
+    btn.Text = default and "ON" or "OFF"
+    btn.BackgroundColor3 = default and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(170, 0, 0)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Parent = frame
+    
+    local state = default
+    btn.MouseButton1Click:Connect(function()
+        state = not state
+        btn.Text = state and "ON" or "OFF"
+        btn.BackgroundColor3 = state and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(170, 0, 0)
+        callback(state)
+    end)
+    frame.Parent = mainFrame
 end
 
--- 3. Accuracy Slider (0 to 1, steps 0.1)
-createSlider("Accuracy", 0, 1, 0.1, 0, function(v)
-	accuracy = v
-end)
+createToggle("Enable Staring Contest", settingsData.enableStaring, function(v) settingsData.enableStaring = v end)
+createToggle("Highlight all players", settingsData.highlightAll, function(v) settingsData.highlightAll = v end)
+createToggle("Count walls", settingsData.countWalls, function(v) settingsData.countWalls = v end)
 
--- 4. Constraints Slider (0% to 100%, steps 5%)
-createSlider("Constraints (%)", 0, 100, 5, 50, function(v)
-	constraints = v / 100
-end)
-
--- 5. Highlight All Players Toggle
-local highlightToggle = Instance.new("TextButton")
-highlightToggle.Size = UDim2.new(1, 0, 0, 35)
-highlightToggle.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
-highlightToggle.Text = "Highlight All Players: ON"
-highlightToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-highlightToggle.Font = Enum.Font.SourceSansBold
-highlightToggle.TextSize = 14
-highlightToggle.Parent = mainFrame
-Instance.new("UICorner", highlightToggle).CornerRadius = UDim.new(0, 6)
-
-highlightToggle.MouseButton1Click:Connect(function()
-	highlightEnabled = not highlightEnabled
-	highlightToggle.Text = "Highlight All Players: " .. (highlightEnabled and "ON" or "OFF")
-	highlightToggle.BackgroundColor3 = highlightEnabled and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(170, 0, 0)
-end)
-
--- 6. Count Walls Toggle
-local wallsToggle = Instance.new("TextButton")
-wallsToggle.Size = UDim2.new(1, 0, 0, 35)
-wallsToggle.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
-wallsToggle.Text = "Count Walls: ON"
-wallsToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-wallsToggle.Font = Enum.Font.SourceSansBold
-wallsToggle.TextSize = 14
-wallsToggle.Parent = mainFrame
-Instance.new("UICorner", wallsToggle).CornerRadius = UDim.new(0, 6)
-
-wallsToggle.MouseButton1Click:Connect(function()
-	countWalls = not countWalls
-	wallsToggle.Text = "Count Walls: " .. (countWalls and "ON" or "OFF")
-	wallsToggle.BackgroundColor3 = countWalls and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(170, 0, 0)
-end)
-
--- ⬜ Snippet 4: Highlight System and Team Management Logic
-local Teams = game:GetService("Teams")
-
--- Initialize opposing teams automatically at execution start
-local function initTeams()
-	for _, team in ipairs(Teams:GetTeams()) do
-		if team ~= localPlayer.Team then
-			selectedTeams[team] = true
-		else
-			selectedTeams[team] = false
-		end
-	end
+-- ⬜ Snippet 3: Sliders, Team List View Frame, and Open Teams Button
+local function createSlider(name, min, max, step, default, isPercent, callback)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, -10, 0, 50)
+    frame.BackgroundTransparency = 1
+    
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.6, 0, 0.5, 0)
+    label.Text = name
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.BackgroundTransparency = 1
+    label.Parent = frame
+    
+    local inputbox = Instance.new("TextBox")
+    inputbox.Size = UDim2.new(0.35, 0, 0.5, 0)
+    inputbox.Position = UDim2.new(0.65, 0, 0, 0)
+    inputbox.Text = isPercent and (default .. "%") or tostring(default)
+    inputbox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    inputbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    inputbox.Parent = frame
+    
+    inputbox.FocusLost:Connect(function()
+        local num = tonumber(inputbox.Text:gsub("%%",""))
+        if num then
+            num = math.clamp(num, min, max)
+            callback(num)
+            inputbox.Text = isPercent and (num .. "%") or tostring(num)
+        else
+            inputbox.Text = isPercent and (default .. "%") or tostring(default)
+        end
+    end)
+    frame.Parent = mainFrame
 end
-initTeams()
 
--- Auto-Highlight Loop for Newcomers / Existing Players
-RunService.RenderStepped:Connect(function()
-	for _, player in ipairs(Players:GetPlayers()) do
-		if player ~= localPlayer and player.Character then
-			local char = player.Character
-			local highlight = highlightsTable[player]
-			
-			if highlightEnabled then
-				if not highlight or highlight.Parent ~= char then
-					if highlight then highlight:Destroy() end
-					highlight = Instance.new("Highlight")
-					highlight.Name = "StaringHighlight"
-					highlight.Adornee = char
-					highlightsTable[player] = highlight
-					highlight.Parent = char
-				end
-				
-				if player.Team then
-					highlight.FillColor = player.Team.TeamColor.Color
-					highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-				else
-					highlight.FillColor = Color3.fromRGB(255, 255, 255)
-				end
-				highlight.Enabled = true
-			else
-				if highlight then
-					highlight.Enabled = false
-				end
-			end
-		end
-	end
-end)
+createSlider("Accuracy", 0, 1, 0.1, settingsData.accuracy, false, function(v) settingsData.accuracy = v end)
+createSlider("Constraints", 0, 100, 5, settingsData.constraints, true, function(v) settingsData.constraints = v end)
 
-Players.PlayerRemoving:Connect(function(player)
-	if highlightsTable[player] then
-		highlightsTable[player]:Destroy()
-		highlightsTable[player] = nil
-	end
-end)
-
--- Teams Menu UI View Setup
+-- Teams Frame Setup
 local teamsFrame = Instance.new("ScrollingFrame")
+teamsFrame.Name = "TeamsFrame"
 teamsFrame.Size = mainFrame.Size
 teamsFrame.Position = mainFrame.Position
 teamsFrame.BackgroundColor3 = mainFrame.BackgroundColor3
-teamsFrame.BorderSizePixel = 0
 teamsFrame.Visible = false
-teamsFrame.CanvasSize = UDim2.new(0, 0, 0, 300)
-teamsFrame.ScrollBarThickness = 6
 teamsFrame.Parent = screenGui
-Instance.new("UICorner", teamsFrame).CornerRadius = UDim.new(0, 10)
-createPadding(teamsFrame)
 
-local teamsLayout = Instance.new("UIListLayout", teamsFrame)
-teamsLayout.SortOrder = Enum.SortOrder.LayoutOrder
-teamsLayout.Padding = UDim.new(0, 8)
-
--- "X" Button to return to normal GUI
 local closeTeamsBtn = Instance.new("TextButton")
 closeTeamsBtn.Size = UDim2.new(0, 30, 0, 30)
 closeTeamsBtn.Position = UDim2.new(0, 5, 0, 5)
-closeTeamsBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
 closeTeamsBtn.Text = "X"
 closeTeamsBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-closeTeamsBtn.Font = Enum.Font.SourceSansBold
-closeTeamsBtn.TextSize = 16
+closeTeamsBtn.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
 closeTeamsBtn.Parent = teamsFrame
-Instance.new("UICorner", closeTeamsBtn).CornerRadius = UDim.new(0, 4)
 
 closeTeamsBtn.MouseButton1Click:Connect(function()
-	isTeamsViewOpen = false
-	teamsFrame.Visible = false
-	mainFrame.Visible = true
+    teamsFrame.Visible = false
+    mainFrame.Visible = true
 end)
+
+local openTeamsBtn = Instance.new("TextButton")
+openTeamsBtn.Size = UDim2.new(1, -10, 0, 40)
+openTeamsBtn.Text = "Open Teams"
+openTeamsBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+openTeamsBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+openTeamsBtn.Parent = mainFrame
 
 openTeamsBtn.MouseButton1Click:Connect(function()
-	isTeamsViewOpen = true
-	mainFrame.Visible = false
-	teamsFrame.Visible = true
-	
-	-- Refresh Team List Buttons
-	for _, child in ipairs(teamsFrame:GetChildren()) do
-		if child:IsA("TextButton") and child ~= closeTeamsBtn then
-			child:Destroy()
-		end
-	end
-	
-	for _, team in ipairs(Teams:GetTeams()) do
-		local teamBtn = Instance.new("TextButton")
-		teamBtn.Size = UDim2.new(1, 0, 0, 35)
-		teamBtn.BackgroundColor3 = selectedTeams[team] and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(170, 0, 0)
-		teamBtn.Text = team.Name .. ": " .. (selectedTeams[team] and "SELECTED" : "DESELECTED")
-		teamBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-		teamBtn.Font = Enum.Font.SourceSansBold
-		teamBtn.TextSize = 13
-		teamBtn.Parent = teamsFrame
-		Instance.new("UICorner", teamBtn).CornerRadius = UDim.new(0, 6)
-		
-		teamBtn.MouseButton1Click:Connect(function()
-			selectedTeams[team] = not selectedTeams[team]
-			teamBtn.BackgroundColor3 = selectedTeams[team] and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(170, 0, 0)
-			teamBtn.Text = team.Name .. ": " .. (selectedTeams[team] and "SELECTED" : "DESELECTED")
-		end)
-	end
+    mainFrame.Visible = false
+    teamsFrame.Visible = true
 end)
 
--- ⬜ Snippet 5: Target Selection, Raycasting, Constraints, and Staring Loop
-local raycastParams = RaycastParams.new()
-raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+-- ⬜ Snippet 4: Team Selection Logic & Highlight All Players Loop
+local Teams = game:GetService("Teams")
+local selectedTeams = {}
+
+-- Automatically select opposing teams at start
+task.spawn(function()
+    task.wait(1)
+    for _, team in ipairs(Teams:GetTeams()) do
+        if team ~= LocalPlayer.Team then
+            selectedTeams[team] = true
+        end
+    end
+    
+    local tLayout = Instance.new("UIListLayout")
+    tLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    tLayout.Padding = UDim.new(0, 5)
+    tLayout.Parent = teamsFrame
+    
+    for _, team in ipairs(Teams:GetTeams()) do
+        local tBtn = Instance.new("TextButton")
+        tBtn.Size = UDim2.new(1, -10, 0, 35)
+        tBtn.Text = team.Name
+        tBtn.BackgroundColor3 = selectedTeams[team] and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(80, 80, 80)
+        tBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        tBtn.Parent = teamsFrame
+        
+        tBtn.MouseButton1Click:Connect(function()
+            selectedTeams[team] = not selectedTeams[team]
+            tBtn.BackgroundColor3 = selectedTeams[team] and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(80, 80, 80)
+        end)
+    end
+end)
+
+-- Highlight system
+task.spawn(function()
+    while true do
+        task.wait(1)
+        if settingsData.highlightAll then
+            for _, player in ipairs(Players:GetPlayers()) do
+                if player ~= LocalPlayer and player.Character then
+                    local char = player.Character
+                    if not char:FindFirstChild("StaringHighlight") then
+                        local hl = Instance.new("Highlight")
+                        hl.Name = "StaringHighlight"
+                        hl.Adornee = char
+                        hl.Parent = char
+                    end
+                    local hl = char:FindFirstChild("StaringHighlight")
+                    if player.Team then
+                        hl.FillColor = player.Team.TeamColor.Color
+                        hl.OutlineColor = player.Team.TeamColor.Color
+                    end
+                    hl.Enabled = true
+                end
+            end
+        else
+            for _, player in ipairs(Players:GetPlayers()) do
+                if player.Character and player.Character:FindFirstChild("StaringHighlight") then
+                    player.Character.StaringHighlight.Enabled = false
+                end
+            end
+        end
+    end
+end)
+
+-- ⬜ Snippet 5: Main Staring Logic (Camera and Character Staring with Raycast & Constraints)
+local RunService = game:GetService("RunService")
+local Camera = workspace.CurrentCamera
 
 RunService.RenderStepped:Connect(function(dt)
-	if not staringEnabled then return end
-	
-	local char = localPlayer.Character
-	if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-	local rootPart = char.HumanoidRootPart
-	
-	local bestTarget = nil
-	local closestDist = math.huge
-	local screenSize = camera.ViewportSize
-	local centerScreen = Vector2.new(screenSize.X / 2, screenSize.Y / 2)
-	local maxScreenRadius = (screenSize.Magnitude / 2) * constraints
-	
-	for _, player in ipairs(Players:GetPlayers()) do
-		if player ~= localPlayer and player.Character and player.Character:FindFirstChild("Head") then
-			-- Verify Team selection
-			if selectedTeams[player.Team] == true then
-				local targetHead = player.Character.Head
-				local screenPos, onScreen = camera:WorldToViewportPoint(targetHead.Position)
-				
-				if onScreen then
-					local screenPos2D = Vector2.new(screenPos.X, screenPos.Y)
-					local distFromCenter = (screenPos2D - centerScreen).Magnitude
-					
-					-- Check against Constraints percentage
-					if distFromCenter <= maxScreenRadius then
-						-- Check Wall constraints
-						local isValid = true
-						if countWalls then
-							raycastParams.FilterDescendantsInstances = {char, player.Character}
-							local result = Workspace:Raycast(camera.CFrame.Position, targetHead.Position - camera.CFrame.Position, raycastParams)
-							if result then
-								isValid = false
-							end
-						end
-						
-						if isValid and distFromCenter < closestDist then
-							closestDist = distFromCenter
-							bestTarget = targetHead
-						end
-					end
-				end
-			end
-		end
-	end
-	
-	if bestTarget then
-		local targetCFrame = CFrame.lookAt(camera.CFrame.Position, bestTarget.Position)
-		
-		if accuracy == 0 then
-			camera.CFrame = targetCFrame
-			rootPart.CFrame = CFrame.new(rootPart.Position, Vector3.new(bestTarget.Position.X, rootPart.Position.Y, bestTarget.Position.Z))
-		else
-			-- Accuracy lerp calculation (1 = slower, lower = faster)
-			local alpha = math.clamp(dt * (10 / (accuracy * 10 + 0.001)), 0, 1)
-			camera.CFrame = camera.CFrame:Lerp(targetCFrame, alpha)
-			
-			local lookTarget = Vector3.new(bestTarget.Position.X, rootPart.Position.Y, bestTarget.Position.Z)
-			rootPart.CFrame = rootPart.CFrame:Lerp(CFrame.new(rootPart.Position, lookTarget), alpha)
-		end
-	end
+    if not settingsData.enableStaring then return end
+    
+    local myChar = LocalPlayer.Character
+    if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return end
+    local rootPart = myChar.HumanoidRootPart
+    
+    local bestTarget = nil
+    local shortestDist = math.huge
+    
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
+            local targetTeam = player.Team
+            if not targetTeam or selectedTeams[targetTeam] then
+                local head = player.Character.Head
+                local screenPos, onScreen = Camera:WorldToScreenPoint(head.Position)
+                
+                if onScreen then
+                    -- Check constraints (screen center closeness based on percentage)
+                    local viewportSize = Camera.ViewportSize
+                    local center = Vector2.new(viewportSize.X / 2, viewportSize.Y / 2)
+                    local distFromCenter = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
+                    local maxDist = (viewportSize.Magnitude / 2) * (settingsData.constraints / 100)
+                    
+                    if distFromCenter <= maxDist then
+                        -- Check wall obstruction
+                        local canSee = true
+                        if settingsData.countWalls then
+                            local rayParams = RaycastParams.new()
+                            rayParams.FilterDescendantsInstances = {myChar, player.Character}
+                            rayParams.FilterType = Enum.RaycastFilterType.Exclude
+                            local result = workspace:Raycast(Camera.CFrame.Position, head.Position - Camera.CFrame.Position, rayParams)
+                            if result then
+                                canSee = false
+                            end
+                        end
+                        
+                        if canSee then
+                            local dist = (head.Position - rootPart.Position).Magnitude
+                            if dist < shortestDist then
+                                shortestDist = dist
+                                bestTarget = head
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    if bestTarget then
+        local targetCFrame = CFrame.new(Camera.CFrame.Position, bestTarget.Position)
+        if settingsData.accuracy == 0 then
+            Camera.CFrame = targetCFrame
+        else
+            Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, math.clamp(dt / settingsData.accuracy, 0.05, 1))
+        end
+    end
 end)
-
