@@ -268,33 +268,40 @@ backBtn.MouseButton1Click:Connect(function()
     scrollingFrame.Visible = true
 end)
 
--- ⬜ Snippet 4: Core Logic for Staring, Highlighting, and Wall Checks
+-- ⬜ Snippet 4: Core Logic for Staring, Highlighting, and Wall Checks (Updated)
 local camera = workspace.CurrentCamera
 local highlights = {}
 
-local function updateHighlights()
-    if not _G.StaringSettings.HighlightEnabled then
-        for _, h in pairs(highlights) do h:Destroy() end
-        highlights = {}
-        return
+local function applyHighlight(player, char)
+    if not _G.StaringSettings.HighlightEnabled then return end
+    
+    -- Remove old highlight if it exists
+    if highlights[player] then
+        highlights[player]:Destroy()
+        highlights[player] = nil
     end
     
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= localPlayer and player.Character then
-            local char = player.Character
-            if not highlights[player] then
-                local hl = Instance.new("Highlight")
-                hl.Parent = char
-                highlights[player] = hl
-            end
-            local hl = highlights[player]
-            if player.Team and player.Team.TeamColor then
-                hl.FillColor = player.Team.TeamColor.Color
-                hl.OutlineColor = Color3.fromRGB(255, 255, 255)
-            end
+    if player ~= localPlayer and char then
+        local hl = Instance.new("Highlight")
+        hl.Adornee = char
+        hl.Parent = char
+        highlights[player] = hl
+        
+        -- Update color based on team
+        if player.Team and player.Team.TeamColor then
+            hl.FillColor = player.Team.TeamColor.Color
+            hl.OutlineColor = Color3.fromRGB(255, 255, 255)
         end
     end
 end
+
+-- Track newcomers and respawns automatically
+Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function(char)
+        task.wait(0.5) -- Small wait for character to fully load
+        applyHighlight(player, char)
+    end)
+end)
 
 Players.PlayerRemoving:Connect(function(player)
     if highlights[player] then
@@ -303,8 +310,31 @@ Players.PlayerRemoving:Connect(function(player)
     end
 end)
 
+-- Initialize highlights for players already in the game
+for _, player in ipairs(Players:GetPlayers()) do
+    if player ~= localPlayer then
+        if player.Character then
+            applyHighlight(player, player.Character)
+        end
+        player.CharacterAdded:Connect(function(char)
+            task.wait(0.5)
+            applyHighlight(player, char)
+        end)
+    end
+end
+
 RunService.RenderStepped:Connect(function(dt)
-    updateHighlights()
+    -- Handle highlight toggle updates
+    if not _G.StaringSettings.HighlightEnabled then
+        for _, h in pairs(highlights) do h:Destroy() end
+        highlights = {}
+    else
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= localPlayer and player.Character and not highlights[player] then
+                applyHighlight(player, player.Character)
+            end
+        end
+    end
     
     if not _G.StaringSettings.Enabled then return end
     
