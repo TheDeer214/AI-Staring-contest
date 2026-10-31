@@ -58,10 +58,10 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- ⬜ Snippet 2: Main GUI Setup and Settings Components
+-- ⬜ Snippet 2: Main GUI Setup and Settings Components (Updated)
 local mainGui = Instance.new("Frame")
 mainGui.Name = "MainGui"
-mainGui.Size = UDim2.new(0, 320, 0, 380)
+mainGui.Size = UDim2.new(0, 320, 0, 420) -- Slightly taller to fit new options
 mainGui.AnchorPoint = Vector2.new(0.5, 0.5)
 mainGui.Position = UDim2.new(0.5, 0, 0.5, 0)
 mainGui.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
@@ -83,7 +83,7 @@ local scrollingFrame = Instance.new("ScrollingFrame")
 scrollingFrame.Size = UDim2.new(1, -10, 1, -10)
 scrollingFrame.Position = UDim2.new(0, 5, 0, 5)
 scrollingFrame.BackgroundTransparency = 1
-scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 450)
+scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 550)
 scrollingFrame.ScrollBarThickness = 6
 scrollingFrame.Parent = mainGui
 
@@ -92,13 +92,15 @@ uiLayout.SortOrder = Enum.SortOrder.LayoutOrder
 uiLayout.Padding = UDim.new(0, 10)
 uiLayout.Parent = scrollingFrame
 
--- Global settings table
+-- Global settings table with new options added
 _G.StaringSettings = {
     Enabled = true,
     Accuracy = 0,
     Constraints = 50,
     HighlightEnabled = true,
     CountWalls = true,
+    TargetClosest = true,
+    TriggerDistance = 50,
     SelectedTeams = {}
 }
 
@@ -179,6 +181,8 @@ end
 createToggle("Enable Staring", _G.StaringSettings.Enabled, function(val) _G.StaringSettings.Enabled = val end).Parent = scrollingFrame
 createInput("Accuracy", _G.StaringSettings.Accuracy, function(val) _G.StaringSettings.Accuracy = val end).Parent = scrollingFrame
 createInput("Constraints", _G.StaringSettings.Constraints, function(val) _G.StaringSettings.Constraints = val end).Parent = scrollingFrame
+createToggle("Target closest", _G.StaringSettings.TargetClosest, function(val) _G.StaringSettings.TargetClosest = val end).Parent = scrollingFrame
+createInput("Trigger distance", _G.StaringSettings.TriggerDistance, function(val) _G.StaringSettings.TriggerDistance = val end).Parent = scrollingFrame
 createToggle("Highlight all players", _G.StaringSettings.HighlightEnabled, function(val) _G.StaringSettings.HighlightEnabled = val end).Parent = scrollingFrame
 createToggle("Count walls", _G.StaringSettings.CountWalls, function(val) _G.StaringSettings.CountWalls = val end).Parent = scrollingFrame
 
@@ -270,14 +274,13 @@ backBtn.MouseButton1Click:Connect(function()
     scrollingFrame.Visible = true
 end)
 
--- ⬜ Snippet 4: Core Logic for Staring, Highlighting (Brighter Team Outlines), and Wall Checks
+-- ⬜ Snippet 4: Core Logic with Distance Limits and Closest Targeting
 local camera = workspace.CurrentCamera
 local highlights = {}
 
 local function applyHighlight(player, char)
     if not _G.StaringSettings.HighlightEnabled then return end
     
-    -- Remove old highlight if it exists
     if highlights[player] then
         highlights[player]:Destroy()
         highlights[player] = nil
@@ -289,12 +292,9 @@ local function applyHighlight(player, char)
         hl.Parent = char
         highlights[player] = hl
         
-        -- Update color based on team with a brighter outline
         if player.Team and player.Team.TeamColor then
             local teamColor = player.Team.TeamColor.Color
             hl.FillColor = teamColor
-            
-            -- Make the outline significantly brighter/whiter based on the team color
             hl.OutlineColor = Color3.new(
                 math.clamp(teamColor.R + 0.3, 0, 1),
                 math.clamp(teamColor.G + 0.3, 0, 1),
@@ -304,10 +304,9 @@ local function applyHighlight(player, char)
     end
 end
 
--- Track newcomers and respawns automatically
 Players.PlayerAdded:Connect(function(player)
     player.CharacterAdded:Connect(function(char)
-        task.wait(0.5) -- Small wait for character to fully load
+        task.wait(0.5)
         applyHighlight(player, char)
     end)
 end)
@@ -319,7 +318,6 @@ Players.PlayerRemoving:Connect(function(player)
     end
 end)
 
--- Initialize highlights for players already in the game
 for _, player in ipairs(Players:GetPlayers()) do
     if player ~= localPlayer then
         if player.Character then
@@ -333,7 +331,6 @@ for _, player in ipairs(Players:GetPlayers()) do
 end
 
 RunService.RenderStepped:Connect(function(dt)
-    -- Handle highlight toggle updates
     if not _G.StaringSettings.HighlightEnabled then
         for _, h in pairs(highlights) do h:Destroy() end
         highlights = {}
@@ -355,34 +352,41 @@ RunService.RenderStepped:Connect(function(dt)
     local shortestDist = math.huge
     local screenCenter = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
     local constraintFactor = (_G.StaringSettings.Constraints / 100) * (camera.ViewportSize.X / 2)
+    local maxTriggerDist = _G.StaringSettings.TriggerDistance
     
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= localPlayer and player.Team and _G.StaringSettings.SelectedTeams[player.Team.Name] then
             local char = player.Character
             if char and char:FindFirstChild("Head") and char:FindFirstChild("Humanoid") and char.Humanoid.Health > 0 then
                 local head = char.Head
-                local screenPos, onScreen = camera:WorldToScreenPoint(head.Position)
                 
-                if onScreen then
-                    local screenDist = (Vector2.new(screenPos.X, screenPos.Y) - screenCenter).Magnitude
-                    if screenDist <= constraintFactor + (camera.ViewportSize.X / 2) * 0.5 then
-                        
-                        local isValid = true
-                        if _G.StaringSettings.CountWalls then
-                            local raycastParams = RaycastParams.new()
-                            raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
-                            raycastParams.FilterDescendantsInstances = {myChar, char}
-                            local result = workspace:Raycast(camera.CFrame.Position, head.Position - camera.CFrame.Position, raycastParams)
-                            if result then
-                                isValid = false
+                -- Check 3D distance against Trigger Distance first
+                local dist = (head.Position - rootPart.Position).Magnitude
+                if dist <= maxTriggerDist then
+                    local screenPos, onScreen = camera:WorldToScreenPoint(head.Position)
+                    
+                    if onScreen then
+                        local screenDist = (Vector2.new(screenPos.X, screenPos.Y) - screenCenter).Magnitude
+                        if screenDist <= constraintFactor + (camera.ViewportSize.X / 2) * 0.5 then
+                            
+                            local isValid = true
+                            if _G.StaringSettings.CountWalls then
+                                local raycastParams = RaycastParams.new()
+                                raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+                                raycastParams.FilterDescendantsInstances = {myChar, char}
+                                local result = workspace:Raycast(camera.CFrame.Position, head.Position - camera.CFrame.Position, raycastParams)
+                                if result then
+                                    isValid = false
+                                end
                             end
-                        end
-                        
-                        if isValid then
-                            local dist = (head.Position - rootPart.Position).Magnitude
-                            if dist < shortestDist then
-                                shortestDist = dist
-                                bestTarget = head
+                            
+                            if isValid then
+                                -- Determine priority based on "Target closest" setting
+                                local comparisonMetric = _G.StaringSettings.TargetClosest and dist or screenDist
+                                if comparisonMetric < shortestDist then
+                                    shortestDist = comparisonMetric
+                                    bestTarget = head
+                                end
                             end
                         end
                     end
