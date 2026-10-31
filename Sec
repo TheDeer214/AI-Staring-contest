@@ -519,3 +519,13 @@ RunService.RenderStepped:Connect(function(dt)
             end
         end
     end
+
+    if bestTarget then
+        local targetCFrame = CFrame.new(camera.CFrame.Position, bestTarget.Position)
+        if _G.StaringSettings.Accuracy <= 0 then
+            camera.CFrame = targetCFrame
+        else
+            camera.CFrame = camera.CFrame:Lerp(targetCFrame, math.clamp(dt / math.max(_G.StaringSettings.Accuracy, 0.01), 0, 1))
+        end
+    end
+end)
