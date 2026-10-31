@@ -58,7 +58,7 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- ⬜ Snippet 2: Main GUI Setup with Inset Padding and No Scrollbar Bar
+-- ⬜ Snippet 2: Main GUI Setup with Count NPCs Toggle
 local mainGui = Instance.new("Frame")
 mainGui.Name = "MainGui"
 mainGui.Size = UDim2.new(0, 440, 0, 280)
@@ -79,21 +79,20 @@ toggleButton.MouseButton1Click:Connect(function()
     mainGui.Visible = mainGuiVisible
 end)
 
--- Inner container frame to give it top/bottom/side padding from the main window borders
 local contentContainer = Instance.new("Frame")
 contentContainer.Name = "ContentContainer"
 contentContainer.Size = UDim2.new(1, -24, 1, -24)
 contentContainer.Position = UDim2.new(0.5, 0, 0.5, 0)
 contentContainer.AnchorPoint = Vector2.new(0.5, 0.5)
 contentContainer.BackgroundTransparency = 1
-contentContainer.ClipsDescendants = true -- Acts as the mask to keep things neatly inside
+contentContainer.ClipsDescendants = true
 contentContainer.Parent = mainGui
 
 local scrollingFrame = Instance.new("ScrollingFrame")
 scrollingFrame.Size = UDim2.new(1, 0, 1, 0)
 scrollingFrame.BackgroundTransparency = 1
-scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 480)
-scrollingFrame.ScrollBarThickness = 0 -- Completely removes the scrollbar line/bar
+scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 520) -- Increased slightly to fit the new toggle
+scrollingFrame.ScrollBarThickness = 0
 scrollingFrame.Parent = contentContainer
 
 local uiLayout = Instance.new("UIListLayout")
@@ -101,7 +100,7 @@ uiLayout.SortOrder = Enum.SortOrder.LayoutOrder
 uiLayout.Padding = UDim.new(0, 10)
 uiLayout.Parent = scrollingFrame
 
--- Global settings table
+-- Global settings table with CountNPCs added (default false)
 _G.StaringSettings = {
     Enabled = true,
     Accuracy = 0,
@@ -110,6 +109,7 @@ _G.StaringSettings = {
     CountWalls = true,
     TargetClosest = true,
     TriggerDistance = 50,
+    CountNPCs = false,
     SelectedTeams = {}
 }
 
@@ -194,6 +194,7 @@ createInput("Trigger distance", _G.StaringSettings.TriggerDistance, function(val
 createToggle("Target closest", _G.StaringSettings.TargetClosest, function(val) _G.StaringSettings.TargetClosest = val end).Parent = scrollingFrame
 createToggle("Highlight all players", _G.StaringSettings.HighlightEnabled, function(val) _G.StaringSettings.HighlightEnabled = val end).Parent = scrollingFrame
 createToggle("Count walls", _G.StaringSettings.CountWalls, function(val) _G.StaringSettings.CountWalls = val end).Parent = scrollingFrame
+createToggle("Count NPCs", _G.StaringSettings.CountNPCs, function(val) _G.StaringSettings.CountNPCs = val end).Parent = scrollingFrame
 
 -- ⬜ Snippet 3: Teams Sub-GUI and Team Selection Management
 local teamsGui = Instance.new("Frame")
@@ -283,9 +284,10 @@ backBtn.MouseButton1Click:Connect(function()
     scrollingFrame.Visible = true
 end)
 
--- ⬜ Snippet 4: Core Logic with Distance Limits and Closest Targeting
+-- ⬜ Snippet 4: Core Logic with NPC Staring and Highlighting Support
 local camera = workspace.CurrentCamera
 local highlights = {}
+local npcHighlights = {}
 
 local function applyHighlight(player, char)
     if not _G.StaringSettings.HighlightEnabled then return end
@@ -340,14 +342,49 @@ for _, player in ipairs(Players:GetPlayers()) do
 end
 
 RunService.RenderStepped:Connect(function(dt)
+    -- Handle highlights update (Players & NPCs)
     if not _G.StaringSettings.HighlightEnabled then
         for _, h in pairs(highlights) do h:Destroy() end
         highlights = {}
+        for _, h in pairs(npcHighlights) do h:Destroy() end
+        npcHighlights = {}
     else
         for _, player in ipairs(Players:GetPlayers()) do
             if player ~= localPlayer and player.Character and not highlights[player] then
                 applyHighlight(player, player.Character)
             end
+        end
+        
+        if _G.StaringSettings.CountNPCs then
+            local currentNpcs = {}
+            for _, obj in ipairs(workspace:GetChildren()) do
+                if obj:IsA("Model") and obj:FindFirstChild("Head") and obj:FindFirstChild("Humanoid") then
+                    local isPlayerChar = false
+                    for _, p in ipairs(Players:GetPlayers()) do
+                        if p.Character == obj then isPlayerChar = true break end
+                    end
+                    if not isPlayerChar then
+                        currentNpcs[obj] = true
+                        if not npcHighlights[obj] then
+                            local hl = Instance.new("Highlight")
+                            hl.Adornee = obj
+                            hl.Parent = obj
+                            hl.FillColor = Color3.fromRGB(120, 120, 120)
+                            hl.OutlineColor = Color3.fromRGB(220, 220, 220)
+                            npcHighlights[obj] = hl
+                        end
+                    end
+                end
+            end
+            for obj, hl in pairs(npcHighlights) do
+                if not currentNpcs[obj] or not obj.Parent then
+                    hl:Destroy()
+                    npcHighlights[obj] = nil
+                end
+            end
+        else
+            for _, h in pairs(npcHighlights) do h:Destroy() end
+            npcHighlights = {}
         end
     end
     
@@ -363,42 +400,58 @@ RunService.RenderStepped:Connect(function(dt)
     local constraintFactor = (_G.StaringSettings.Constraints / 100) * (camera.ViewportSize.X / 2)
     local maxTriggerDist = _G.StaringSettings.TriggerDistance
     
+    -- Helper function to evaluate potential targets (Players or NPCs)
+    local function evaluateTarget(head, charModel)
+        local dist = (head.Position - rootPart.Position).Magnitude
+        if dist <= maxTriggerDist then
+            local screenPos, onScreen = camera:WorldToScreenPoint(head.Position)
+            if onScreen then
+                local screenDist = (Vector2.new(screenPos.X, screenPos.Y) - screenCenter).Magnitude
+                if screenDist <= constraintFactor + (camera.ViewportSize.X / 2) * 0.5 then
+                    
+                    local isValid = true
+                    if _G.StaringSettings.CountWalls then
+                        local raycastParams = RaycastParams.new()
+                        raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+                        raycastParams.FilterDescendantsInstances = {myChar, charModel}
+                        local result = workspace:Raycast(camera.CFrame.Position, head.Position - camera.CFrame.Position, raycastParams)
+                        if result then
+                            isValid = false
+                        end
+                    end
+                    
+                    if isValid then
+                        local comparisonMetric = _G.StaringSettings.TargetClosest and dist or screenDist
+                        if comparisonMetric < shortestDist then
+                            shortestDist = comparisonMetric
+                            bestTarget = head
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    -- Check Players
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= localPlayer and player.Team and _G.StaringSettings.SelectedTeams[player.Team.Name] then
             local char = player.Character
             if char and char:FindFirstChild("Head") and char:FindFirstChild("Humanoid") and char.Humanoid.Health > 0 then
-                local head = char.Head
-                
-                -- Check 3D distance against Trigger Distance first
-                local dist = (head.Position - rootPart.Position).Magnitude
-                if dist <= maxTriggerDist then
-                    local screenPos, onScreen = camera:WorldToScreenPoint(head.Position)
-                    
-                    if onScreen then
-                        local screenDist = (Vector2.new(screenPos.X, screenPos.Y) - screenCenter).Magnitude
-                        if screenDist <= constraintFactor + (camera.ViewportSize.X / 2) * 0.5 then
-                            
-                            local isValid = true
-                            if _G.StaringSettings.CountWalls then
-                                local raycastParams = RaycastParams.new()
-                                raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
-                                raycastParams.FilterDescendantsInstances = {myChar, char}
-                                local result = workspace:Raycast(camera.CFrame.Position, head.Position - camera.CFrame.Position, raycastParams)
-                                if result then
-                                    isValid = false
-                                end
-                            end
-                            
-                            if isValid then
-                                -- Determine priority based on "Target closest" setting
-                                local comparisonMetric = _G.StaringSettings.TargetClosest and dist or screenDist
-                                if comparisonMetric < shortestDist then
-                                    shortestDist = comparisonMetric
-                                    bestTarget = head
-                                end
-                            end
-                        end
-                    end
+                evaluateTarget(char.Head, char)
+            end
+        end
+    end
+    
+    -- Check NPCs if enabled
+    if _G.StaringSettings.CountNPCs then
+        for _, obj in ipairs(workspace:GetChildren()) do
+            if obj:IsA("Model") and obj:FindFirstChild("Head") and obj:FindFirstChild("Humanoid") and obj.Humanoid.Health > 0 then
+                local isPlayerChar = false
+                for _, p in ipairs(Players:GetPlayers()) do
+                    if p.Character == obj then isPlayerChar = true break end
+                end
+                if not isPlayerChar then
+                    evaluateTarget(obj.Head, obj)
                 end
             end
         end
