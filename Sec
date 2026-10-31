@@ -20,8 +20,8 @@ toggleButton.Name = "ToggleMainGui"
 toggleButton.Size = UDim2.new(0, 45, 0, 45)
 toggleButton.Position = UDim2.new(0, 10, 0, 10)
 toggleButton.Text = "👁️"
-toggleButton.TextSize = 24
-toggleButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+toggleButton.TextSize = 20
+toggleButton.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 toggleButton.ZIndex = 10 -- Ensures it renders above everything else in this ScreenGui
 toggleButton.Parent = screenGui
@@ -64,7 +64,7 @@ mainGui.Name = "MainGui"
 mainGui.Size = UDim2.new(0, 440, 0, 280)
 mainGui.AnchorPoint = Vector2.new(0.5, 0.5)
 mainGui.Position = UDim2.new(0.5, 0, 0.5, 0)
-mainGui.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainGui.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 mainGui.Visible = true
 mainGui.Parent = screenGui
 
@@ -104,11 +104,11 @@ uiLayout.Parent = scrollingFrame
 _G.StaringSettings = {
     Enabled = true,
     Accuracy = 0,
-    Constraints = 50,
+    Constraints = 25,
     HighlightEnabled = true,
     CountWalls = true,
     TargetClosest = true,
-    TriggerDistance = 50,
+    TriggerDistance = 100,
     CountNPCs = false,
     SelectedTeams = {}
 }
@@ -132,8 +132,8 @@ local function createToggle(name, defaultState, callback)
     btn.Size = UDim2.new(0, 50, 0, 25)
     btn.AnchorPoint = Vector2.new(1, 0.5)
     btn.Position = UDim2.new(1, 0, 0.5, 0)
-    btn.Text = defaultState and "ON" or "OFF"
-    btn.BackgroundColor3 = defaultState and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(170, 0, 0)
+    btn.Text = defaultState and " " or " "
+    btn.BackgroundColor3 = defaultState and Color3.fromRGB(128, 255, 128) or Color3.fromRGB(255, 77, 77)
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     btn.Font = Enum.Font.SourceSansBold
     btn.TextSize = 14
@@ -215,7 +215,7 @@ teamsGui.Parent = mainGui
 local openTeamsBtn = Instance.new("TextButton")
 openTeamsBtn.Size = UDim2.new(1, 0, 0, 40)
 openTeamsBtn.Text = "Open Teams"
-openTeamsBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+openTeamsBtn.BackgroundColor3 = Color3.fromRGB(51, 153, 255)
 openTeamsBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 openTeamsBtn.Font = Enum.Font.SourceSansBold
 openTeamsBtn.TextSize = 16
@@ -230,7 +230,7 @@ backBtn.Name = "BackBtn"
 backBtn.Size = UDim2.new(0, 35, 0, 35)
 backBtn.Position = UDim2.new(0, 5, 0, 5)
 backBtn.Text = "X"
-backBtn.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+backBtn.BackgroundColor3 = Color3.fromRGB(255, 77, 77)
 backBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 backBtn.Font = Enum.Font.SourceSansBold
 backBtn.TextSize = 18
@@ -246,7 +246,7 @@ autoAdjustToggle.Name = "AutoAdjustToggle"
 autoAdjustToggle.Size = UDim2.new(0, 130, 0, 35)
 autoAdjustToggle.Position = UDim2.new(0, 45, 0, 5)
 autoAdjustToggle.Text = "Auto-adjust disabled"
-autoAdjustToggle.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+autoAdjustToggle.BackgroundColor3 = Color3.fromRGB(255, 77, 77)
 autoAdjustToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
 autoAdjustToggle.Font = Enum.Font.SourceSansBold
 autoAdjustToggle.TextSize = 13
@@ -263,7 +263,7 @@ autoAdjustToggle.MouseButton1Click:Connect(function()
     autoAdjustState = not autoAdjustState
     _G.StaringSettings.AutoAdjust = autoAdjustState
     autoAdjustToggle.Text = "Auto-adjust " .. (autoAdjustState and "enabled" or "disabled")
-    autoAdjustToggle.BackgroundColor3 = autoAdjustState and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(170, 0, 0)
+    autoAdjustToggle.BackgroundColor3 = autoAdjustState and Color3.fromRGB(128, 255, 128) or Color3.fromRGB(255, 77, 77)
 end)
 
 local teamsScrolling = Instance.new("ScrollingFrame")
@@ -298,8 +298,8 @@ local function refreshTeamList()
         local tBtn = Instance.new("TextButton")
         tBtn.Size = UDim2.new(1, 0, 0, 35)
         local isSelected = _G.StaringSettings.SelectedTeams[team.Name] == true
-        tBtn.Text = team.Name .. (isSelected and " [Selected]" or " [Deselected]")
-        tBtn.BackgroundColor3 = isSelected and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(120, 0, 0)
+        tBtn.Text = team.Name .. (isSelected and " [TARGET]" or " [IGNORED]")
+        tBtn.BackgroundColor3 = isSelected and Color3.fromRGB(128, 255, 128) or Color3.fromRGB(255, 77, 77)
         tBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
         tBtn.Font = Enum.Font.SourceSansBold
         tBtn.TextSize = 14
@@ -312,8 +312,8 @@ local function refreshTeamList()
         tBtn.MouseButton1Click:Connect(function()
             local current = _G.StaringSettings.SelectedTeams[team.Name] == true
             _G.StaringSettings.SelectedTeams[team.Name] = not current
-            tBtn.Text = team.Name .. (not current and " [Selected]" or " [Deselected]")
-            tBtn.BackgroundColor3 = not current and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(120, 0, 0)
+            tBtn.Text = team.Name .. (not current and " [TARGET]" or " [IGNORED]")
+            tBtn.BackgroundColor3 = not current and Color3.fromRGB(128, 255, 128) or Color3.fromRGB(255, 77, 77)
         end)
     end
 end
