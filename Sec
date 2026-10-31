@@ -88,10 +88,6 @@ contentContainer.BackgroundTransparency = 1
 contentContainer.ClipsDescendants = true
 contentContainer.Parent = mainGui
 
-local contentCorner = Instance.new("UICorner")
-contentCorner.CornerRadius = UDim.new(0, 8)
-contentCorner.Parent = contentContainer
-
 local scrollingFrame = Instance.new("ScrollingFrame")
 scrollingFrame.Size = UDim2.new(1, 0, 1, 0)
 scrollingFrame.BackgroundTransparency = 1
@@ -215,10 +211,6 @@ teamsGui.BackgroundTransparency = 1
 teamsGui.ClipsDescendants = true
 teamsGui.Visible = false
 teamsGui.Parent = mainGui
-
-local teamsGuiCorner = Instance.new("UICorner")
-teamsGuiCorner.CornerRadius = UDim.new(0, 8)
-teamsGuiCorner.Parent = teamsGui
 
 local openTeamsBtn = Instance.new("TextButton")
 openTeamsBtn.Size = UDim2.new(1, 0, 0, 36)
