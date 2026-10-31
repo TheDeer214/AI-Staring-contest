@@ -196,7 +196,7 @@ createToggle("Highlight all players", _G.StaringSettings.HighlightEnabled, funct
 createToggle("Count walls", _G.StaringSettings.CountWalls, function(val) _G.StaringSettings.CountWalls = val end).Parent = scrollingFrame
 createToggle("Count NPCs", _G.StaringSettings.CountNPCs, function(val) _G.StaringSettings.CountNPCs = val end).Parent = scrollingFrame
 
--- ⬜ Snippet 3: Teams Sub-GUI with Auto-Adjust Toggle and Team Management
+-- ⬜ Snippet 3: Teams Sub-GUI with Auto-Adjust Toggle next to X Button
 local teamsGui = Instance.new("Frame")
 teamsGui.Name = "TeamsGui"
 teamsGui.Size = UDim2.new(1, 0, 1, 0)
@@ -224,30 +224,38 @@ backBtn.Font = Enum.Font.SourceSansBold
 backBtn.TextSize = 18
 backBtn.Parent = teamsGui
 
--- Add Auto-adjust toggle right next to the X button
-_G.StaringSettings.AutoAdjust = false
-
+-- Auto-adjust toggle next to the X button
 local autoAdjustToggle = Instance.new("TextButton")
 autoAdjustToggle.Name = "AutoAdjustToggle"
-autoAdjustToggle.Size = UDim2.new(0, 140, 0, 35)
+autoAdjustToggle.Size = UDim2.new(0, 130, 0, 35)
 autoAdjustToggle.Position = UDim2.new(0, 45, 0, 5)
 autoAdjustToggle.Text = "Auto-adjust: OFF"
-autoAdjustToggle.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
+autoAdjustToggle.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
 autoAdjustToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
 autoAdjustToggle.Font = Enum.Font.SourceSansBold
 autoAdjustToggle.TextSize = 13
 autoAdjustToggle.Parent = teamsGui
 
-local autoCorner = Instance.new("UICorner")
-autoCorner.CornerRadius = UDim.new(0, 6)
-autoCorner.Parent = autoAdjustToggle
+local autoAdjustCorner = Instance.new("UICorner")
+autoAdjustCorner.CornerRadius = UDim.new(0, 6)
+autoAdjustCorner.Parent = autoAdjustToggle
+
+_G.StaringSettings.AutoAdjust = false
+
+local autoAdjustState = false
+autoAdjustToggle.MouseButton1Click:Connect(function()
+    autoAdjustState = not autoAdjustState
+    _G.StaringSettings.AutoAdjust = autoAdjustState
+    autoAdjustToggle.Text = "Auto-adjust: " .. (autoAdjustState and "ON" or "OFF")
+    autoAdjustToggle.BackgroundColor3 = autoAdjustState and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(170, 0, 0)
+end)
 
 local teamsScrolling = Instance.new("ScrollingFrame")
 teamsScrolling.Size = UDim2.new(1, -10, 1, -50)
 teamsScrolling.Position = UDim2.new(0, 5, 0, 45)
 teamsScrolling.BackgroundTransparency = 1
 teamsScrolling.CanvasSize = UDim2.new(0, 0, 0, 300)
-teamsScrolling.ScrollBarThickness = 6
+teamsScrolling.ScrollBarThickness = 0
 teamsScrolling.Parent = teamsGui
 
 local teamsLayout = Instance.new("UIListLayout")
@@ -255,7 +263,7 @@ teamsLayout.SortOrder = Enum.SortOrder.LayoutOrder
 teamsLayout.Padding = UDim.new(0, 8)
 teamsLayout.Parent = teamsScrolling
 
--- Initial team selection at script startup
+-- Initial one-time selection at execution startup
 local function initTeams()
     for _, team in ipairs(Teams:GetTeams()) do
         if team ~= localPlayer.Team then
@@ -268,17 +276,6 @@ end
 initTeams()
 
 local function refreshTeamList()
-    -- If Auto-adjust is enabled, continuously enforce team rules
-    if _G.StaringSettings.AutoAdjust then
-        for _, team in ipairs(Teams:GetTeams()) do
-            if team ~= localPlayer.Team then
-                _G.StaringSettings.SelectedTeams[team.Name] = true
-            else
-                _G.StaringSettings.SelectedTeams[team.Name] = false
-            end
-        end
-    end
-
     for _, child in ipairs(teamsScrolling:GetChildren()) do
         if child:IsA("TextButton") then child:Destroy() end
     end
@@ -294,27 +291,13 @@ local function refreshTeamList()
         tBtn.Parent = teamsScrolling
         
         tBtn.MouseButton1Click:Connect(function()
-            if not _G.StaringSettings.AutoAdjust then
-                local current = _G.StaringSettings.SelectedTeams[team.Name] == true
-                _G.StaringSettings.SelectedTeams[team.Name] = not current
-                tBtn.Text = team.Name .. (not current and " [Selected]" or " [Deselected]")
-                tBtn.BackgroundColor3 = not current and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(120, 0, 0)
-            end
+            local current = _G.StaringSettings.SelectedTeams[team.Name] == true
+            _G.StaringSettings.SelectedTeams[team.Name] = not current
+            tBtn.Text = team.Name .. (not current and " [Selected]" or " [Deselected]")
+            tBtn.BackgroundColor3 = not current and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(120, 0, 0)
         end)
     end
 end
-
-autoAdjustToggle.MouseButton1Click:Connect(function()
-    _G.StaringSettings.AutoAdjust = not _G.StaringSettings.AutoAdjust
-    if _G.StaringSettings.AutoAdjust then
-        autoAdjustToggle.Text = "Auto-adjust: ON"
-        autoAdjustToggle.BackgroundColor3 = Color3.fromRGB(0, 120, 0)
-    else
-        autoAdjustToggle.Text = "Auto-adjust: OFF"
-        autoAdjustToggle.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
-    end
-    refreshTeamList()
-end)
 
 openTeamsBtn.MouseButton1Click:Connect(function()
     refreshTeamList()
@@ -325,6 +308,23 @@ end)
 backBtn.MouseButton1Click:Connect(function()
     teamsGui.Visible = false
     scrollingFrame.Visible = true
+end)
+
+-- Continuous background check for Auto-adjust loop
+RunService.RenderStepped:Connect(function()
+    if _G.StaringSettings.AutoAdjust and localPlayer.Team then
+        for _, team in ipairs(Teams:GetTeams()) do
+            if team == localPlayer.Team then
+                _G.StaringSettings.SelectedTeams[team.Name] = false
+            else
+                _G.StaringSettings.SelectedTeams[team.Name] = true
+            end
+        end
+        -- Refresh visual list live if the teams menu is currently open
+        if teamsGui.Visible then
+            refreshTeamList()
+        end
+    end
 end)
 
 -- ⬜ Snippet 4: Core Logic with True Center-Screen Constraint Circle Radius
