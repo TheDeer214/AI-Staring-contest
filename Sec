@@ -19,7 +19,7 @@ local toggleButton = Instance.new("TextButton")
 toggleButton.Name = "ToggleMainGui"
 toggleButton.Size = UDim2.new(0, 45, 0, 45)
 toggleButton.Position = UDim2.new(0, 10, 0, 10)
-toggleButton.Text = "👁️"
+toggleButton.Text = "•"
 toggleButton.TextSize = 20
 toggleButton.BackgroundColor3 = Color3.fromRGB(32, 32, 32)
 toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -91,7 +91,7 @@ contentContainer.Parent = mainGui
 local scrollingFrame = Instance.new("ScrollingFrame")
 scrollingFrame.Size = UDim2.new(1, 0, 1, 0)
 scrollingFrame.BackgroundTransparency = 1
-scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 400) -- Adjusted to remove extra bottom space
+scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 375) -- Adjusted to remove extra bottom space
 scrollingFrame.ScrollBarThickness = 0
 scrollingFrame.Parent = contentContainer
 
