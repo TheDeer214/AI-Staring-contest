@@ -21,7 +21,7 @@ toggleButton.Size = UDim2.new(0, 45, 0, 45)
 toggleButton.Position = UDim2.new(0, 10, 0, 10)
 toggleButton.Text = "👁️"
 toggleButton.TextSize = 20
-toggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+toggleButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 toggleButton.ZIndex = 10 -- Ensures it renders above everything else in this ScreenGui
 toggleButton.Parent = screenGui
@@ -299,7 +299,7 @@ local function refreshTeamList()
         tBtn.Size = UDim2.new(1, 0, 0, 35)
         local isSelected = _G.StaringSettings.SelectedTeams[team.Name] == true
         tBtn.Text = team.Name .. (isSelected and " [TARGET]" or " [IGNORED]")
-        tBtn.BackgroundColor3 = isSelected and Color3.fromRGB(120, 210, 120) or Color3.fromRGB(235, 75, 75)
+        tBtn.BackgroundColor3 = isSelected and Color3.fromRGB(120, 210, 120) or Color3.fromRGB(220, 75, 75)
         tBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
         tBtn.Font = Enum.Font.SourceSansBold
         tBtn.TextSize = 14
