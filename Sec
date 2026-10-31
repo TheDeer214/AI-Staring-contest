@@ -1,10 +1,24 @@
-print("Let's Stare")
+print("Let's stare v2")
 
 -- 🟩 Save and load
 local HttpService = game:GetService("HttpService")
 local fileName = "StaringScriptSettings.json"
 
--- Function to save settings to a local file
+-- 1
+_G.StaringSettings = {
+    Enabled = true,
+    Accuracy = 0,
+    Constraints = 50,
+    HighlightEnabled = true,
+    CountWalls = true,
+    TargetClosest = true,
+    TriggerDistance = 50,
+    CountNPCs = false,
+    SelectedTeams = {},
+    AutoAdjust = false
+}
+
+-- 2
 local function saveSettings()
     local success, encoded = pcall(function()
         return HttpService:JSONEncode(_G.StaringSettings)
@@ -14,12 +28,13 @@ local function saveSettings()
     end
 end
 
--- Function to load settings from the file if it exists
+-- 3
 local function loadSettings()
     if pcall(function() readfile(fileName) end) then
         local success, decoded = pcall(function()
             return HttpService:JSONDecode(readfile(fileName))
         end)
+        -- Make sure it decoded successfully and returned a table
         if success and type(decoded) == "table" then
             for k, v in pairs(decoded) do
                 _G.StaringSettings[k] = v
@@ -28,7 +43,6 @@ local function loadSettings()
     end
 end
 
--- Load settings when the script starts
 loadSettings()
 
 -- ⬜ Snippet 1: Services, Variables, and Draggable Toggle Button (Layer Fixed)
@@ -132,19 +146,6 @@ local uiLayout = Instance.new("UIListLayout")
 uiLayout.SortOrder = Enum.SortOrder.LayoutOrder
 uiLayout.Padding = UDim.new(0, 8) -- Tightened padding slightly for compact fit
 uiLayout.Parent = scrollingFrame
-
--- Global settings table
-_G.StaringSettings = {
-    Enabled = true,
-    Accuracy = 0,
-    Constraints = 50,
-    HighlightEnabled = true,
-    CountWalls = true,
-    TargetClosest = true,
-    TriggerDistance = 100,
-    CountNPCs = false,
-    SelectedTeams = {}
-}
 
 local function createToggle(name, defaultState, callback)
     local frame = Instance.new("Frame")
