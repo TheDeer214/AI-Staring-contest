@@ -313,7 +313,7 @@ local function refreshTeamList()
             local current = _G.StaringSettings.SelectedTeams[team.Name] == true
             _G.StaringSettings.SelectedTeams[team.Name] = not current
             tBtn.Text = team.Name .. (not current and " [TARGET]" or " [IGNORED]")
-            tBtn.BackgroundColor3 = not current and Color3.fromRGB(128, 255, 128) or Color3.fromRGB(255, 77, 77)
+            tBtn.BackgroundColor3 = not current and Color3.fromRGB(120, 210, 120) or Color3.fromRGB(220, 75, 75)
         end)
     end
 end
