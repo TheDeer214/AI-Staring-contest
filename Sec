@@ -245,7 +245,7 @@ local autoAdjustToggle = Instance.new("TextButton")
 autoAdjustToggle.Name = "AutoAdjustToggle"
 autoAdjustToggle.Size = UDim2.new(0, 130, 0, 35)
 autoAdjustToggle.Position = UDim2.new(0, 45, 0, 5)
-autoAdjustToggle.Text = "Auto-adjust: OFF"
+autoAdjustToggle.Text = "Auto-adjust disabled"
 autoAdjustToggle.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
 autoAdjustToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
 autoAdjustToggle.Font = Enum.Font.SourceSansBold
@@ -262,7 +262,7 @@ local autoAdjustState = false
 autoAdjustToggle.MouseButton1Click:Connect(function()
     autoAdjustState = not autoAdjustState
     _G.StaringSettings.AutoAdjust = autoAdjustState
-    autoAdjustToggle.Text = "Auto-adjust: " .. (autoAdjustState and "ON" or "OFF")
+    autoAdjustToggle.Text = "Auto-adjust: " .. (autoAdjustState and "enabled" or "disabled")
     autoAdjustToggle.BackgroundColor3 = autoAdjustState and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(170, 0, 0)
 end)
 
