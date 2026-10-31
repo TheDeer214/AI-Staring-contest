@@ -264,7 +264,7 @@ autoAdjustToggle.MouseButton1Click:Connect(function()
     autoAdjustToggle.BackgroundColor3 = autoAdjustState and Color3.fromRGB(128, 255, 128) or Color3.fromRGB(255, 77, 77)
 end)
 
--- 😡
+-- 🟥 start team list
 
 local teamsScrolling = Instance.new("ScrollingFrame")
 teamsScrolling.Size = UDim2.new(1, -10, 1, -50)
@@ -281,7 +281,7 @@ teamsLayout.Parent = teamsScrolling
 
 -- Automatically update the CanvasSize whenever the list of teams changes or refreshes!
 teamsLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-    teamsScrolling.CanvasSize = UDim2.new(0, 0, 0, teamsLayout.AbsoluteContentSize.Y)
+    teamsScrolling.CanvasSize = UDim2.new(0, 0, 0, teamsLayout.AbsoluteContentSize.Y + 5)
 end)
 
 local function initTeams()
@@ -294,7 +294,7 @@ local function initTeams()
     end
 end
 
--- 🟩
+-- 🟩 end team list
 
 initTeams()
 
