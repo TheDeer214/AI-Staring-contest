@@ -58,7 +58,7 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- ⬜ Snippet 2: Main GUI Setup and Settings Components (Added Horizontal Padding)
+-- ⬜ Snippet 2: Main GUI Setup and Settings Components (With Horizontal Padding)
 local mainGui = Instance.new("Frame")
 mainGui.Name = "MainGui"
 mainGui.Size = UDim2.new(0, 440, 0, 280)
@@ -80,12 +80,19 @@ toggleButton.MouseButton1Click:Connect(function()
 end)
 
 local scrollingFrame = Instance.new("ScrollingFrame")
-scrollingFrame.Size = UDim2.new(1, -20, 1, -10) -- Added horizontal padding by shrinking width by 20 pixels
-scrollingFrame.Position = UDim2.new(0, 10, 0, 5)   -- Shifted right by 10 pixels to center it perfectly
+scrollingFrame.Size = UDim2.new(1, 0, 1, 0)
 scrollingFrame.BackgroundTransparency = 1
 scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 450)
 scrollingFrame.ScrollBarThickness = 6
 scrollingFrame.Parent = mainGui
+
+-- Add clean horizontal padding so options don't touch the borders
+local uiPadding = Instance.new("UIPadding")
+uiPadding.PaddingLeft = UDim.new(0, 16)
+uiPadding.PaddingRight = UDim.new(0, 16)
+uiPadding.PaddingTop = UDim.new(0, 12)
+uiPadding.PaddingBottom = UDim.new(0, 12)
+uiPadding.Parent = scrollingFrame
 
 local uiLayout = Instance.new("UIListLayout")
 uiLayout.SortOrder = Enum.SortOrder.LayoutOrder
