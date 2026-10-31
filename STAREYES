@@ -58,10 +58,10 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- ⬜ Snippet 2: Main GUI Setup and Settings Components (Updated)
+-- ⬜ Snippet 2: Main GUI Setup and Settings Components (Resized & Reordered)
 local mainGui = Instance.new("Frame")
 mainGui.Name = "MainGui"
-mainGui.Size = UDim2.new(0, 320, 0, 420) -- Slightly taller to fit new options
+mainGui.Size = UDim2.new(0, 360, 0, 380) -- Wider and slightly shorter
 mainGui.AnchorPoint = Vector2.new(0.5, 0.5)
 mainGui.Position = UDim2.new(0.5, 0, 0.5, 0)
 mainGui.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
@@ -92,7 +92,7 @@ uiLayout.SortOrder = Enum.SortOrder.LayoutOrder
 uiLayout.Padding = UDim.new(0, 10)
 uiLayout.Parent = scrollingFrame
 
--- Global settings table with new options added
+-- Global settings table
 _G.StaringSettings = {
     Enabled = true,
     Accuracy = 0,
@@ -181,8 +181,8 @@ end
 createToggle("Enable Staring", _G.StaringSettings.Enabled, function(val) _G.StaringSettings.Enabled = val end).Parent = scrollingFrame
 createInput("Accuracy", _G.StaringSettings.Accuracy, function(val) _G.StaringSettings.Accuracy = val end).Parent = scrollingFrame
 createInput("Constraints", _G.StaringSettings.Constraints, function(val) _G.StaringSettings.Constraints = val end).Parent = scrollingFrame
+createInput("Trigger distance", _G.StaringSettings.TriggerDistance, function(val) _G.StaringSettings.TriggerDistance = val end).Parent = scrollingFrame -- Moved above Target closest
 createToggle("Target closest", _G.StaringSettings.TargetClosest, function(val) _G.StaringSettings.TargetClosest = val end).Parent = scrollingFrame
-createInput("Trigger distance", _G.StaringSettings.TriggerDistance, function(val) _G.StaringSettings.TriggerDistance = val end).Parent = scrollingFrame
 createToggle("Highlight all players", _G.StaringSettings.HighlightEnabled, function(val) _G.StaringSettings.HighlightEnabled = val end).Parent = scrollingFrame
 createToggle("Count walls", _G.StaringSettings.CountWalls, function(val) _G.StaringSettings.CountWalls = val end).Parent = scrollingFrame
 
