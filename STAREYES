@@ -196,7 +196,7 @@ createToggle("Highlight all players", _G.StaringSettings.HighlightEnabled, funct
 createToggle("Count walls", _G.StaringSettings.CountWalls, function(val) _G.StaringSettings.CountWalls = val end).Parent = scrollingFrame
 createToggle("Count NPCs", _G.StaringSettings.CountNPCs, function(val) _G.StaringSettings.CountNPCs = val end).Parent = scrollingFrame
 
--- ⬜ Snippet 3: Teams Sub-GUI and Team Selection Management
+-- ⬜ Snippet 3: Teams Sub-GUI with Auto-Adjust Toggle and Team Management
 local teamsGui = Instance.new("Frame")
 teamsGui.Name = "TeamsGui"
 teamsGui.Size = UDim2.new(1, 0, 1, 0)
@@ -224,6 +224,24 @@ backBtn.Font = Enum.Font.SourceSansBold
 backBtn.TextSize = 18
 backBtn.Parent = teamsGui
 
+-- Add Auto-adjust toggle right next to the X button
+_G.StaringSettings.AutoAdjust = false
+
+local autoAdjustToggle = Instance.new("TextButton")
+autoAdjustToggle.Name = "AutoAdjustToggle"
+autoAdjustToggle.Size = UDim2.new(0, 140, 0, 35)
+autoAdjustToggle.Position = UDim2.new(0, 45, 0, 5)
+autoAdjustToggle.Text = "Auto-adjust: OFF"
+autoAdjustToggle.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
+autoAdjustToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+autoAdjustToggle.Font = Enum.Font.SourceSansBold
+autoAdjustToggle.TextSize = 13
+autoAdjustToggle.Parent = teamsGui
+
+local autoCorner = Instance.new("UICorner")
+autoCorner.CornerRadius = UDim.new(0, 6)
+autoCorner.Parent = autoAdjustToggle
+
 local teamsScrolling = Instance.new("ScrollingFrame")
 teamsScrolling.Size = UDim2.new(1, -10, 1, -50)
 teamsScrolling.Position = UDim2.new(0, 5, 0, 45)
@@ -237,7 +255,7 @@ teamsLayout.SortOrder = Enum.SortOrder.LayoutOrder
 teamsLayout.Padding = UDim.new(0, 8)
 teamsLayout.Parent = teamsScrolling
 
--- Automatically select all opposing teams at script startup execution
+-- Initial team selection at script startup
 local function initTeams()
     for _, team in ipairs(Teams:GetTeams()) do
         if team ~= localPlayer.Team then
@@ -250,6 +268,17 @@ end
 initTeams()
 
 local function refreshTeamList()
+    -- If Auto-adjust is enabled, continuously enforce team rules
+    if _G.StaringSettings.AutoAdjust then
+        for _, team in ipairs(Teams:GetTeams()) do
+            if team ~= localPlayer.Team then
+                _G.StaringSettings.SelectedTeams[team.Name] = true
+            else
+                _G.StaringSettings.SelectedTeams[team.Name] = false
+            end
+        end
+    end
+
     for _, child in ipairs(teamsScrolling:GetChildren()) do
         if child:IsA("TextButton") then child:Destroy() end
     end
@@ -265,13 +294,27 @@ local function refreshTeamList()
         tBtn.Parent = teamsScrolling
         
         tBtn.MouseButton1Click:Connect(function()
-            local current = _G.StaringSettings.SelectedTeams[team.Name] == true
-            _G.StaringSettings.SelectedTeams[team.Name] = not current
-            tBtn.Text = team.Name .. (not current and " [Selected]" or " [Deselected]")
-            tBtn.BackgroundColor3 = not current and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(120, 0, 0)
+            if not _G.StaringSettings.AutoAdjust then
+                local current = _G.StaringSettings.SelectedTeams[team.Name] == true
+                _G.StaringSettings.SelectedTeams[team.Name] = not current
+                tBtn.Text = team.Name .. (not current and " [Selected]" or " [Deselected]")
+                tBtn.BackgroundColor3 = not current and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(120, 0, 0)
+            end
         end)
     end
 end
+
+autoAdjustToggle.MouseButton1Click:Connect(function()
+    _G.StaringSettings.AutoAdjust = not _G.StaringSettings.AutoAdjust
+    if _G.StaringSettings.AutoAdjust then
+        autoAdjustToggle.Text = "Auto-adjust: ON"
+        autoAdjustToggle.BackgroundColor3 = Color3.fromRGB(0, 120, 0)
+    else
+        autoAdjustToggle.Text = "Auto-adjust: OFF"
+        autoAdjustToggle.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
+    end
+    refreshTeamList()
+end)
 
 openTeamsBtn.MouseButton1Click:Connect(function()
     refreshTeamList()
