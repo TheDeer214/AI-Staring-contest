@@ -1,0 +1,521 @@
+-- ⬜ Snippet 1: Services, Variables, and Draggable Toggle Button (Layer Fixed)
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Teams = game:GetService("Teams")
+
+local localPlayer = Players.LocalPlayer
+local playerGui = localPlayer:WaitForChild("PlayerGui")
+
+-- Create ScreenGui with a high DisplayOrder so it stays above other game UIs
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "StaringContestGui"
+screenGui.ResetOnSpawn = false
+screenGui.DisplayOrder = 999
+screenGui.Parent = playerGui
+
+-- Draggable Toggle Button (Top Left) with high ZIndex
+local toggleButton = Instance.new("TextButton")
+toggleButton.Name = "ToggleMainGui"
+toggleButton.Size = UDim2.new(0, 45, 0, 45)
+toggleButton.Position = UDim2.new(0, 10, 0, 10)
+toggleButton.Text = "👁️"
+toggleButton.TextSize = 24
+toggleButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.ZIndex = 10 -- Ensures it renders above everything else in this ScreenGui
+toggleButton.Parent = screenGui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 8)
+corner.Parent = toggleButton
+
+-- Mobile-friendly dragging logic
+local dragging, dragInput, dragStart, startPos
+toggleButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = toggleButton.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+toggleButton.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        toggleButton.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- ⬜ Snippet 2: Main GUI Setup with Smooth Rounded Elements
+local mainGui = Instance.new("Frame")
+mainGui.Name = "MainGui"
+mainGui.Size = UDim2.new(0, 440, 0, 280)
+mainGui.AnchorPoint = Vector2.new(0.5, 0.5)
+mainGui.Position = UDim2.new(0.5, 0, 0.5, 0)
+mainGui.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainGui.Visible = true
+mainGui.Parent = screenGui
+
+local mainCorner = Instance.new("UICorner")
+mainCorner.CornerRadius = UDim.new(0, 12)
+mainCorner.Parent = mainGui
+
+-- Toggle main GUI visibility via the 👁️ button
+local mainGuiVisible = true
+toggleButton.MouseButton1Click:Connect(function()
+    mainGuiVisible = not mainGuiVisible
+    mainGui.Visible = mainGuiVisible
+end)
+
+local contentContainer = Instance.new("Frame")
+contentContainer.Name = "ContentContainer"
+contentContainer.Size = UDim2.new(1, -24, 1, -24)
+contentContainer.Position = UDim2.new(0.5, 0, 0.5, 0)
+contentContainer.AnchorPoint = Vector2.new(0.5, 0.5)
+contentContainer.BackgroundTransparency = 1
+contentContainer.ClipsDescendants = true
+contentContainer.Parent = mainGui
+
+local scrollingFrame = Instance.new("ScrollingFrame")
+scrollingFrame.Size = UDim2.new(1, 0, 1, 0)
+scrollingFrame.BackgroundTransparency = 1
+scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 520)
+scrollingFrame.ScrollBarThickness = 0
+scrollingFrame.Parent = contentContainer
+
+local uiLayout = Instance.new("UIListLayout")
+uiLayout.SortOrder = Enum.SortOrder.LayoutOrder
+uiLayout.Padding = UDim.new(0, 10)
+uiLayout.Parent = scrollingFrame
+
+-- Global settings table
+_G.StaringSettings = {
+    Enabled = true,
+    Accuracy = 0,
+    Constraints = 50,
+    HighlightEnabled = true,
+    CountWalls = true,
+    TargetClosest = true,
+    TriggerDistance = 50,
+    CountNPCs = false,
+    SelectedTeams = {}
+}
+
+local function createToggle(name, defaultState, callback)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, 0, 0, 40)
+    frame.BackgroundTransparency = 1
+    
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.7, 0, 1, 0)
+    label.Text = name
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.BackgroundTransparency = 1
+    label.Font = Enum.Font.SourceSansBold
+    label.TextSize = 16
+    label.Parent = frame
+    
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 50, 0, 25)
+    btn.AnchorPoint = Vector2.new(1, 0.5)
+    btn.Position = UDim2.new(1, 0, 0.5, 0)
+    btn.Text = defaultState and "ON" or "OFF"
+    btn.BackgroundColor3 = defaultState and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(170, 0, 0)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.SourceSansBold
+    btn.TextSize = 14
+    btn.Parent = frame
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 6)
+    btnCorner.Parent = btn
+    
+    local state = defaultState
+    btn.MouseButton1Click:Connect(function()
+        state = not state
+        btn.Text = state and "ON" or "OFF"
+        btn.BackgroundColor3 = state and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(170, 0, 0)
+        callback(state)
+    end)
+    return frame
+end
+
+local function createInput(name, defaultValue, callback)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, 0, 0, 40)
+    frame.BackgroundTransparency = 1
+    
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.6, 0, 1, 0)
+    label.Text = name
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.BackgroundTransparency = 1
+    label.Font = Enum.Font.SourceSansBold
+    label.TextSize = 16
+    label.Parent = frame
+    
+    local textBox = Instance.new("TextBox")
+    textBox.Size = UDim2.new(0, 80, 0, 30)
+    textBox.AnchorPoint = Vector2.new(1, 0.5)
+    textBox.Position = UDim2.new(1, 0, 0.5, 0)
+    textBox.Text = tostring(defaultValue)
+    textBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    textBox.Font = Enum.Font.SourceSansBold
+    textBox.TextSize = 14
+    textBox.Parent = frame
+    
+    local textCorner = Instance.new("UICorner")
+    textCorner.CornerRadius = UDim.new(0, 6)
+    textCorner.Parent = textBox
+    
+    textBox.FocusLost:Connect(function()
+        local val = tonumber(textBox.Text)
+        if val then
+            callback(val)
+        else
+            textBox.Text = tostring(defaultValue)
+            callback(defaultValue)
+        end
+    end)
+    return frame
+end
+
+createToggle("Enable Staring", _G.StaringSettings.Enabled, function(val) _G.StaringSettings.Enabled = val end).Parent = scrollingFrame
+createInput("Accuracy", _G.StaringSettings.Accuracy, function(val) _G.StaringSettings.Accuracy = val end).Parent = scrollingFrame
+createInput("Constraints", _G.StaringSettings.Constraints, function(val) _G.StaringSettings.Constraints = val end).Parent = scrollingFrame
+createInput("Trigger distance", _G.StaringSettings.TriggerDistance, function(val) _G.StaringSettings.TriggerDistance = val end).Parent = scrollingFrame
+createToggle("Target closest", _G.StaringSettings.TargetClosest, function(val) _G.StaringSettings.TargetClosest = val end).Parent = scrollingFrame
+createToggle("Highlight all players", _G.StaringSettings.HighlightEnabled, function(val) _G.StaringSettings.HighlightEnabled = val end).Parent = scrollingFrame
+createToggle("Count walls", _G.StaringSettings.CountWalls, function(val) _G.StaringSettings.CountWalls = val end).Parent = scrollingFrame
+createToggle("Count NPCs", _G.StaringSettings.CountNPCs, function(val) _G.StaringSettings.CountNPCs = val end).Parent = scrollingFrame
+
+-- ⬜ Snippet 3: Teams Sub-GUI with Smooth Rounded Buttons and Columns
+local teamsGui = Instance.new("Frame")
+teamsGui.Name = "TeamsGui"
+teamsGui.Size = UDim2.new(1, 0, 1, 0)
+teamsGui.BackgroundTransparency = 1
+teamsGui.Visible = false
+teamsGui.Parent = mainGui
+
+local openTeamsBtn = Instance.new("TextButton")
+openTeamsBtn.Size = UDim2.new(1, 0, 0, 40)
+openTeamsBtn.Text = "Open Teams"
+openTeamsBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+openTeamsBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+openTeamsBtn.Font = Enum.Font.SourceSansBold
+openTeamsBtn.TextSize = 16
+openTeamsBtn.Parent = scrollingFrame
+
+local openTeamsCorner = Instance.new("UICorner")
+openTeamsCorner.CornerRadius = UDim.new(0, 8)
+openTeamsCorner.Parent = openTeamsBtn
+
+local backBtn = Instance.new("TextButton")
+backBtn.Name = "BackBtn"
+backBtn.Size = UDim2.new(0, 35, 0, 35)
+backBtn.Position = UDim2.new(0, 5, 0, 5)
+backBtn.Text = "X"
+backBtn.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+backBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+backBtn.Font = Enum.Font.SourceSansBold
+backBtn.TextSize = 18
+backBtn.Parent = teamsGui
+
+local backCorner = Instance.new("UICorner")
+backCorner.CornerRadius = UDim.new(0, 6)
+backCorner.Parent = backBtn
+
+-- Auto-adjust toggle next to the X button
+local autoAdjustToggle = Instance.new("TextButton")
+autoAdjustToggle.Name = "AutoAdjustToggle"
+autoAdjustToggle.Size = UDim2.new(0, 130, 0, 35)
+autoAdjustToggle.Position = UDim2.new(0, 45, 0, 5)
+autoAdjustToggle.Text = "Auto-adjust: OFF"
+autoAdjustToggle.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+autoAdjustToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+autoAdjustToggle.Font = Enum.Font.SourceSansBold
+autoAdjustToggle.TextSize = 13
+autoAdjustToggle.Parent = teamsGui
+
+local autoAdjustCorner = Instance.new("UICorner")
+autoAdjustCorner.CornerRadius = UDim.new(0, 6)
+autoAdjustCorner.Parent = autoAdjustToggle
+
+_G.StaringSettings.AutoAdjust = false
+
+local autoAdjustState = false
+autoAdjustToggle.MouseButton1Click:Connect(function()
+    autoAdjustState = not autoAdjustState
+    _G.StaringSettings.AutoAdjust = autoAdjustState
+    autoAdjustToggle.Text = "Auto-adjust: " .. (autoAdjustState and "ON" or "OFF")
+    autoAdjustToggle.BackgroundColor3 = autoAdjustState and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(170, 0, 0)
+end)
+
+local teamsScrolling = Instance.new("ScrollingFrame")
+teamsScrolling.Size = UDim2.new(1, -10, 1, -50)
+teamsScrolling.Position = UDim2.new(0, 5, 0, 45)
+teamsScrolling.BackgroundTransparency = 1
+teamsScrolling.CanvasSize = UDim2.new(0, 0, 0, 300)
+teamsScrolling.ScrollBarThickness = 0
+teamsScrolling.Parent = teamsGui
+
+local teamsLayout = Instance.new("UIListLayout")
+teamsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+teamsLayout.Padding = UDim.new(0, 8)
+teamsLayout.Parent = teamsScrolling
+
+local function initTeams()
+    for _, team in ipairs(Teams:GetTeams()) do
+        if team ~= localPlayer.Team then
+            _G.StaringSettings.SelectedTeams[team.Name] = true
+        else
+            _G.StaringSettings.SelectedTeams[team.Name] = false
+        end
+    end
+end
+initTeams()
+
+local function refreshTeamList()
+    for _, child in ipairs(teamsScrolling:GetChildren()) do
+        if child:IsA("TextButton") then child:Destroy() end
+    end
+    for _, team in ipairs(Teams:GetTeams()) do
+        local tBtn = Instance.new("TextButton")
+        tBtn.Size = UDim2.new(1, 0, 0, 35)
+        local isSelected = _G.StaringSettings.SelectedTeams[team.Name] == true
+        tBtn.Text = team.Name .. (isSelected and " [Selected]" or " [Deselected]")
+        tBtn.BackgroundColor3 = isSelected and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(120, 0, 0)
+        tBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        tBtn.Font = Enum.Font.SourceSansBold
+        tBtn.TextSize = 14
+        tBtn.Parent = teamsScrolling
+        
+        local tCorner = Instance.new("UICorner")
+        tCorner.CornerRadius = UDim.new(0, 6)
+        tCorner.Parent = tBtn
+        
+        tBtn.MouseButton1Click:Connect(function()
+            local current = _G.StaringSettings.SelectedTeams[team.Name] == true
+            _G.StaringSettings.SelectedTeams[team.Name] = not current
+            tBtn.Text = team.Name .. (not current and " [Selected]" or " [Deselected]")
+            tBtn.BackgroundColor3 = not current and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(120, 0, 0)
+        end)
+    end
+end
+
+openTeamsBtn.MouseButton1Click:Connect(function()
+    refreshTeamList()
+    teamsGui.Visible = true
+    scrollingFrame.Visible = false
+end)
+
+backBtn.MouseButton1Click:Connect(function()
+    teamsGui.Visible = false
+    scrollingFrame.Visible = true
+end)
+
+RunService.RenderStepped:Connect(function()
+    if _G.StaringSettings.AutoAdjust and localPlayer.Team then
+        for _, team in ipairs(Teams:GetTeams()) do
+            if team == localPlayer.Team then
+                _G.StaringSettings.SelectedTeams[team.Name] = false
+            else
+                _G.StaringSettings.SelectedTeams[team.Name] = true
+            end
+        end
+        if teamsGui.Visible then
+            refreshTeamList()
+        end
+    end
+end)
+
+-- ⬜ Snippet 4: Core Logic with True Center-Screen Constraint Circle Radius
+local camera = workspace.CurrentCamera
+local highlights = {}
+local npcHighlights = {}
+
+local function applyHighlight(player, char)
+    if not _G.StaringSettings.HighlightEnabled then return end
+    
+    if highlights[player] then
+        highlights[player]:Destroy()
+        highlights[player] = nil
+    end
+    
+    if player ~= localPlayer and char then
+        local hl = Instance.new("Highlight")
+        hl.Adornee = char
+        hl.Parent = char
+        highlights[player] = hl
+        
+        if player.Team and player.Team.TeamColor then
+            local teamColor = player.Team.TeamColor.Color
+            hl.FillColor = teamColor
+            hl.OutlineColor = Color3.new(
+                math.clamp(teamColor.R + 0.3, 0, 1),
+                math.clamp(teamColor.G + 0.3, 0, 1),
+                math.clamp(teamColor.B + 0.3, 0, 1)
+            )
+        end
+    end
+end
+
+Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function(char)
+        task.wait(0.5)
+        applyHighlight(player, char)
+    end)
+end)
+
+Players.PlayerRemoving:Connect(function(player)
+    if highlights[player] then
+        highlights[player]:Destroy()
+        highlights[player] = nil
+    end
+end)
+
+for _, player in ipairs(Players:GetPlayers()) do
+    if player ~= localPlayer then
+        if player.Character then
+            applyHighlight(player, player.Character)
+        end
+        player.CharacterAdded:Connect(function(char)
+            task.wait(0.5)
+            applyHighlight(player, char)
+        end)
+    end
+end
+
+RunService.RenderStepped:Connect(function(dt)
+    -- Handle highlights update (Players & NPCs)
+    if not _G.StaringSettings.HighlightEnabled then
+        for _, h in pairs(highlights) do h:Destroy() end
+        highlights = {}
+        for _, h in pairs(npcHighlights) do h:Destroy() end
+        npcHighlights = {}
+    else
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= localPlayer and player.Character and not highlights[player] then
+                applyHighlight(player, player.Character)
+            end
+        end
+        
+        if _G.StaringSettings.CountNPCs then
+            local currentNpcs = {}
+            for _, obj in ipairs(workspace:GetChildren()) do
+                if obj:IsA("Model") and obj:FindFirstChild("Head") and obj:FindFirstChild("Humanoid") then
+                    local isPlayerChar = false
+                    for _, p in ipairs(Players:GetPlayers()) do
+                        if p.Character == obj then isPlayerChar = true break end
+                    end
+                    if not isPlayerChar then
+                        currentNpcs[obj] = true
+                        if not npcHighlights[obj] then
+                            local hl = Instance.new("Highlight")
+                            hl.Adornee = obj
+                            hl.Parent = obj
+                            hl.FillColor = Color3.fromRGB(120, 120, 120)
+                            hl.OutlineColor = Color3.fromRGB(220, 220, 220)
+                            npcHighlights[obj] = hl
+                        end
+                    end
+                end
+            end
+            for obj, hl in pairs(npcHighlights) do
+                if not currentNpcs[obj] or not obj.Parent then
+                    hl:Destroy()
+                    npcHighlights[obj] = nil
+                end
+            end
+        else
+            for _, h in pairs(npcHighlights) do h:Destroy() end
+            npcHighlights = {}
+        end
+    end
+    
+    if not _G.StaringSettings.Enabled then return end
+    
+    local myChar = localPlayer.Character
+    if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return end
+    local rootPart = myChar.HumanoidRootPart
+    
+    local bestTarget = nil
+    local shortestDist = math.huge
+    local screenCenter = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
+    
+    -- Pure scaling constraint radius: 0% = 0 radius (strict center), 100% = half screen width radius
+    local constraintRadius = (_G.StaringSettings.Constraints / 100) * (camera.ViewportSize.X / 2)
+    local maxTriggerDist = _G.StaringSettings.TriggerDistance
+    
+    -- Helper function to evaluate potential targets (Players or NPCs)
+    local function evaluateTarget(head, charModel)
+        local dist = (head.Position - rootPart.Position).Magnitude
+        if dist <= maxTriggerDist then
+            local screenPos, onScreen = camera:WorldToScreenPoint(head.Position)
+            if onScreen then
+                local screenDist = (Vector2.new(screenPos.X, screenPos.Y) - screenCenter).Magnitude
+                -- Check if target is inside the center constraint circle radius
+                if screenDist <= constraintRadius then
+                    
+                    local isValid = true
+                    if _G.StaringSettings.CountWalls then
+                        local raycastParams = RaycastParams.new()
+                        raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+                        raycastParams.FilterDescendantsInstances = {myChar, charModel}
+                        local result = workspace:Raycast(camera.CFrame.Position, head.Position - camera.CFrame.Position, raycastParams)
+                        if result then
+                            isValid = false
+                        end
+                    end
+                    
+                    if isValid then
+                        local comparisonMetric = _G.StaringSettings.TargetClosest and dist or screenDist
+                        if comparisonMetric < shortestDist then
+                            shortestDist = comparisonMetric
+                            bestTarget = head
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    -- Check Players
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= localPlayer and player.Team and _G.StaringSettings.SelectedTeams[player.Team.Name] then
+            local char = player.Character
+            if char and char:FindFirstChild("Head") and char:FindFirstChild("Humanoid") and char.Humanoid.Health > 0 then
+                evaluateTarget(char.Head, char)
+            end
+        end
+    end
+    
+    -- Check NPCs if enabled
+    if _G.StaringSettings.CountNPCs then
+        for _, obj in ipairs(workspace:GetChildren()) do
+            if obj:IsA("Model") and obj:FindFirstChild("Head") and obj:FindFirstChild("Humanoid") and obj.Humanoid.Health > 0 then
+                local isPlayerChar = false
+                for _, p in ipairs(Players:GetPlayers()) do
+                    if p.Character == obj then isPlayerChar = true break end
+                end
+                if not isPlayerChar then
+                    evaluateTestTarget = evaluateTarget(obj.Head, obj)
+                end
+            end
+        end
+    end
