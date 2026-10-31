@@ -245,11 +245,11 @@ local autoAdjustToggle = Instance.new("TextButton")
 autoAdjustToggle.Name = "AutoAdjustToggle"
 autoAdjustToggle.Size = UDim2.new(0, 130, 0, 35)
 autoAdjustToggle.Position = UDim2.new(0, 45, 0, 5)
-autoAdjustToggle.Text = "Auto-Adjust"
+autoAdjustToggle.Text = "[AUTO ADJUST]"
 autoAdjustToggle.BackgroundColor3 = Color3.fromRGB(255, 77, 77)
 autoAdjustToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
 autoAdjustToggle.Font = Enum.Font.SourceSansBold
-autoAdjustToggle.TextSize = 20
+autoAdjustToggle.TextSize = 16
 autoAdjustToggle.Parent = teamsGui
 
 local autoAdjustCorner = Instance.new("UICorner")
@@ -262,7 +262,7 @@ local autoAdjustState = false
 autoAdjustToggle.MouseButton1Click:Connect(function()
     autoAdjustState = not autoAdjustState
     _G.StaringSettings.AutoAdjust = autoAdjustState
-    autoAdjustToggle.Text = "Auto-Adjust " .. (autoAdjustState and "" or "")
+    autoAdjustToggle.Text = "[AUTO ADJUST] " .. (autoAdjustState and "" or "")
     autoAdjustToggle.BackgroundColor3 = autoAdjustState and Color3.fromRGB(128, 255, 128) or Color3.fromRGB(255, 77, 77)
 end)
 
