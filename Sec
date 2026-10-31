@@ -146,8 +146,8 @@ local function createToggle(name, defaultState, callback)
     local state = defaultState
     btn.MouseButton1Click:Connect(function()
         state = not state
-        btn.Text = state and "ON" or "OFF"
-        btn.BackgroundColor3 = state and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(170, 0, 0)
+        btn.Text = state and " " or " "
+        btn.BackgroundColor3 = state and Color3.fromRGB(128, 255, 128) or Color3.fromRGB(255, 77, 77)
         callback(state)
     end)
     return frame
