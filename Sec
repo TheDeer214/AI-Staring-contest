@@ -262,7 +262,7 @@ local autoAdjustState = false
 autoAdjustToggle.MouseButton1Click:Connect(function()
     autoAdjustState = not autoAdjustState
     _G.StaringSettings.AutoAdjust = autoAdjustState
-    autoAdjustToggle.Text = "Auto-adjust: " .. (autoAdjustState and "enabled" or "disabled")
+    autoAdjustToggle.Text = "Auto-adjust " .. (autoAdjustState and "enabled" or "disabled")
     autoAdjustToggle.BackgroundColor3 = autoAdjustState and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(170, 0, 0)
 end)
 
