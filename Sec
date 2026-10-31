@@ -91,13 +91,13 @@ contentContainer.Parent = mainGui
 local scrollingFrame = Instance.new("ScrollingFrame")
 scrollingFrame.Size = UDim2.new(1, 0, 1, 0)
 scrollingFrame.BackgroundTransparency = 1
-scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 520)
+scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 380) -- Adjusted to remove extra bottom space
 scrollingFrame.ScrollBarThickness = 0
 scrollingFrame.Parent = contentContainer
 
 local uiLayout = Instance.new("UIListLayout")
 uiLayout.SortOrder = Enum.SortOrder.LayoutOrder
-uiLayout.Padding = UDim.new(0, 10)
+uiLayout.Padding = UDim.new(0, 8) -- Tightened padding slightly for compact fit
 uiLayout.Parent = scrollingFrame
 
 -- Global settings table
@@ -115,7 +115,7 @@ _G.StaringSettings = {
 
 local function createToggle(name, defaultState, callback)
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, 0, 0, 40)
+    frame.Size = UDim2.new(1, 0, 0, 36) -- Slightly more compact height
     frame.BackgroundTransparency = 1
     
     local label = Instance.new("TextLabel")
@@ -129,10 +129,10 @@ local function createToggle(name, defaultState, callback)
     label.Parent = frame
     
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0, 50, 0, 25)
+    btn.Size = UDim2.new(0, 50, 0, 24)
     btn.AnchorPoint = Vector2.new(1, 0.5)
     btn.Position = UDim2.new(1, 0, 0.5, 0)
-    btn.Text = defaultState and " " or " "
+    btn.Text = ""
     btn.BackgroundColor3 = defaultState and Color3.fromRGB(128, 255, 128) or Color3.fromRGB(255, 77, 77)
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     btn.Font = Enum.Font.SourceSansBold
@@ -146,7 +146,6 @@ local function createToggle(name, defaultState, callback)
     local state = defaultState
     btn.MouseButton1Click:Connect(function()
         state = not state
-        btn.Text = state and " " or " "
         btn.BackgroundColor3 = state and Color3.fromRGB(128, 255, 128) or Color3.fromRGB(255, 77, 77)
         callback(state)
     end)
@@ -155,7 +154,7 @@ end
 
 local function createInput(name, defaultValue, callback)
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, 0, 0, 40)
+    frame.Size = UDim2.new(1, 0, 0, 36) -- Slightly more compact height
     frame.BackgroundTransparency = 1
     
     local label = Instance.new("TextLabel")
@@ -169,7 +168,7 @@ local function createInput(name, defaultValue, callback)
     label.Parent = frame
     
     local textBox = Instance.new("TextBox")
-    textBox.Size = UDim2.new(0, 80, 0, 30)
+    textBox.Size = UDim2.new(0, 80, 0, 28)
     textBox.AnchorPoint = Vector2.new(1, 0.5)
     textBox.Position = UDim2.new(1, 0, 0.5, 0)
     textBox.Text = tostring(defaultValue)
@@ -213,7 +212,7 @@ teamsGui.Visible = false
 teamsGui.Parent = mainGui
 
 local openTeamsBtn = Instance.new("TextButton")
-openTeamsBtn.Size = UDim2.new(1, 0, 0, 40)
+openTeamsBtn.Size = UDim2.new(1, 0, 0, 36)
 openTeamsBtn.Text = "Open Teams"
 openTeamsBtn.BackgroundColor3 = Color3.fromRGB(51, 153, 255)
 openTeamsBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -249,7 +248,7 @@ autoAdjustToggle.Text = "[AUTO ADJUST]"
 autoAdjustToggle.BackgroundColor3 = Color3.fromRGB(255, 77, 77)
 autoAdjustToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
 autoAdjustToggle.Font = Enum.Font.SourceSansBold
-autoAdjustToggle.TextSize = 16
+autoAdjustToggle.TextSize = 14
 autoAdjustToggle.Parent = teamsGui
 
 local autoAdjustCorner = Instance.new("UICorner")
@@ -262,7 +261,6 @@ local autoAdjustState = false
 autoAdjustToggle.MouseButton1Click:Connect(function()
     autoAdjustState = not autoAdjustState
     _G.StaringSettings.AutoAdjust = autoAdjustState
-    autoAdjustToggle.Text = "[AUTO ADJUST] " .. (autoAdjustState and "" or "")
     autoAdjustToggle.BackgroundColor3 = autoAdjustState and Color3.fromRGB(128, 255, 128) or Color3.fromRGB(255, 77, 77)
 end)
 
@@ -270,7 +268,7 @@ local teamsScrolling = Instance.new("ScrollingFrame")
 teamsScrolling.Size = UDim2.new(1, -10, 1, -50)
 teamsScrolling.Position = UDim2.new(0, 5, 0, 45)
 teamsScrolling.BackgroundTransparency = 1
-teamsScrolling.CanvasSize = UDim2.new(0, 0, 0, 300)
+teamsScrolling.CanvasSize = UDim2.new(0, 0, 0, 200) -- Reduced canvas size to eliminate trailing bottom space
 teamsScrolling.ScrollBarThickness = 0
 teamsScrolling.Parent = teamsGui
 
