@@ -58,7 +58,7 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- ⬜ Snippet 2: Main GUI Setup and Settings Components (With Horizontal Padding)
+-- ⬜ Snippet 2: Main GUI Setup with Inset Padding and No Scrollbar Bar
 local mainGui = Instance.new("Frame")
 mainGui.Name = "MainGui"
 mainGui.Size = UDim2.new(0, 440, 0, 280)
@@ -79,20 +79,22 @@ toggleButton.MouseButton1Click:Connect(function()
     mainGui.Visible = mainGuiVisible
 end)
 
+-- Inner container frame to give it top/bottom/side padding from the main window borders
+local contentContainer = Instance.new("Frame")
+contentContainer.Name = "ContentContainer"
+contentContainer.Size = UDim2.new(1, -24, 1, -24)
+contentContainer.Position = UDim2.new(0.5, 0, 0.5, 0)
+contentContainer.AnchorPoint = Vector2.new(0.5, 0.5)
+contentContainer.BackgroundTransparency = 1
+contentContainer.ClipsDescendants = true -- Acts as the mask to keep things neatly inside
+contentContainer.Parent = mainGui
+
 local scrollingFrame = Instance.new("ScrollingFrame")
 scrollingFrame.Size = UDim2.new(1, 0, 1, 0)
 scrollingFrame.BackgroundTransparency = 1
-scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 450)
-scrollingFrame.ScrollBarThickness = 6
-scrollingFrame.Parent = mainGui
-
--- Add clean horizontal padding so options don't touch the borders
-local uiPadding = Instance.new("UIPadding")
-uiPadding.PaddingLeft = UDim.new(0, 16)
-uiPadding.PaddingRight = UDim.new(0, 16)
-uiPadding.PaddingTop = UDim.new(0, 12)
-uiPadding.PaddingBottom = UDim.new(0, 12)
-uiPadding.Parent = scrollingFrame
+scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 480)
+scrollingFrame.ScrollBarThickness = 0 -- Completely removes the scrollbar line/bar
+scrollingFrame.Parent = contentContainer
 
 local uiLayout = Instance.new("UIListLayout")
 uiLayout.SortOrder = Enum.SortOrder.LayoutOrder
