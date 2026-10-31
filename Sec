@@ -262,7 +262,7 @@ local autoAdjustState = false
 autoAdjustToggle.MouseButton1Click:Connect(function()
     autoAdjustState = not autoAdjustState
     _G.StaringSettings.AutoAdjust = autoAdjustState
-    autoAdjustToggle.Text = "Auto-adjust " .. (autoAdjustState and "enabled" or "disabled")
+    autoAdjustToggle.Text = "Auto-adjust " .. (autoAdjustState and " " or " ")
     autoAdjustToggle.BackgroundColor3 = autoAdjustState and Color3.fromRGB(128, 255, 128) or Color3.fromRGB(255, 77, 77)
 end)
 
@@ -299,7 +299,7 @@ local function refreshTeamList()
         tBtn.Size = UDim2.new(1, 0, 0, 35)
         local isSelected = _G.StaringSettings.SelectedTeams[team.Name] == true
         tBtn.Text = team.Name .. (isSelected and " [TARGET]" or " [IGNORED]")
-        tBtn.BackgroundColor3 = isSelected and Color3.fromRGB(128, 255, 128) or Color3.fromRGB(255, 77, 77)
+        tBtn.BackgroundColor3 = isSelected and Color3.fromRGB(120, 220, 120) or Color3.fromRGB(255, 77, 77)
         tBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
         tBtn.Font = Enum.Font.SourceSansBold
         tBtn.TextSize = 14
