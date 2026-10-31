@@ -1,3 +1,5 @@
+print("Let's Stare")
+
 -- 🟩 Save and load
 local HttpService = game:GetService("HttpService")
 local fileName = "StaringScriptSettings.json"
