@@ -212,8 +212,13 @@ local teamsGui = Instance.new("Frame")
 teamsGui.Name = "TeamsGui"
 teamsGui.Size = UDim2.new(1, 0, 1, 0)
 teamsGui.BackgroundTransparency = 1
+teamsGui.ClipsDescendants = true
 teamsGui.Visible = false
 teamsGui.Parent = mainGui
+
+local teamsGuiCorner = Instance.new("UICorner")
+teamsGuiCorner.CornerRadius = UDim.new(0, 8)
+teamsGuiCorner.Parent = teamsGui
 
 local openTeamsBtn = Instance.new("TextButton")
 openTeamsBtn.Size = UDim2.new(1, 0, 0, 36)
@@ -238,10 +243,6 @@ backBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 backBtn.Font = Enum.Font.SourceSansBold
 backBtn.TextSize = 18
 backBtn.Parent = teamsGui
-
-local teamsGuiCorner = Instance.new("UICorner")
-teamsGuiCorner.CornerRadius = UDim.new(0, 8)
-teamsGuiCorner.Parent = teamsGui
 
 local backCorner = Instance.new("UICorner")
 backCorner.CornerRadius = UDim.new(0, 6)
