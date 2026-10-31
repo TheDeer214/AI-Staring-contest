@@ -1,3 +1,34 @@
+-- 🟩 Save and load
+local HttpService = game:GetService("HttpService")
+local fileName = "StaringScriptSettings.json"
+
+-- Function to save settings to a local file
+local function saveSettings()
+    local success, encoded = pcall(function()
+        return HttpService:JSONEncode(_G.StaringSettings)
+    end)
+    if success then
+        writefile(fileName, encoded)
+    end
+end
+
+-- Function to load settings from the file if it exists
+local function loadSettings()
+    if pcall(function() readfile(fileName) end) then
+        local success, decoded = pcall(function()
+            return HttpService:JSONDecode(readfile(fileName))
+        end)
+        if success and type(decoded) == "table" then
+            for k, v in pairs(decoded) do
+                _G.StaringSettings[k] = v
+            end
+        end
+    end
+end
+
+-- Load settings when the script starts
+loadSettings()
+
 -- ⬜ Snippet 1: Services, Variables, and Draggable Toggle Button (Layer Fixed)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -148,6 +179,7 @@ local function createToggle(name, defaultState, callback)
         state = not state
         btn.BackgroundColor3 = state and Color3.fromRGB(128, 255, 128) or Color3.fromRGB(255, 77, 77)
         callback(state)
+        saveSettings()
     end)
     return frame
 end
@@ -186,9 +218,11 @@ local function createInput(name, defaultValue, callback)
         local val = tonumber(textBox.Text)
         if val then
             callback(val)
+            saveSettings()
         else
             textBox.Text = tostring(defaultValue)
             callback(defaultValue)
+            saveSettings()
         end
     end)
     return frame
