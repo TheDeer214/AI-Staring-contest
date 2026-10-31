@@ -58,10 +58,10 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- ⬜ Snippet 2: Main GUI Setup and Settings Components (Wider and with Scroller Padding)
+-- ⬜ Snippet 2: Main GUI Setup and Settings Components (Shorter Height, Dead Center)
 local mainGui = Instance.new("Frame")
 mainGui.Name = "MainGui"
-mainGui.Size = UDim2.new(0, 520, 0, 340) -- Increased width and optimized height
+mainGui.Size = UDim2.new(0, 440, 0, 280) -- Shorter height so it has breathing room from the screen edges
 mainGui.AnchorPoint = Vector2.new(0.5, 0.5)
 mainGui.Position = UDim2.new(0.5, 0, 0.5, 0)
 mainGui.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
@@ -80,20 +80,12 @@ toggleButton.MouseButton1Click:Connect(function()
 end)
 
 local scrollingFrame = Instance.new("ScrollingFrame")
-scrollingFrame.Size = UDim2.new(1, 0, 1, 0)
-scrollingFrame.Position = UDim2.new(0, 0, 0, 0)
+scrollingFrame.Size = UDim2.new(1, -10, 1, -10)
+scrollingFrame.Position = UDim2.new(0, 5, 0, 5)
 scrollingFrame.BackgroundTransparency = 1
-scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 520)
+scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 450)
 scrollingFrame.ScrollBarThickness = 6
 scrollingFrame.Parent = mainGui
-
--- Scroller padding for horizontal and vertical breathing room (including bottom lower pad)
-local scrollerPadding = Instance.new("UIPadding")
-scrollerPadding.PaddingTop = UDim.new(0, 14)
-scrollerPadding.PaddingBottom = UDim.new(0, 24)
-scrollerPadding.PaddingLeft = UDim.new(0, 16)
-scrollerPadding.PaddingRight = UDim.new(0, 16)
-scrollerPadding.Parent = scrollingFrame
 
 local uiLayout = Instance.new("UIListLayout")
 uiLayout.SortOrder = Enum.SortOrder.LayoutOrder
