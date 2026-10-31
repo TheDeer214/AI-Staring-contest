@@ -19,7 +19,7 @@ local toggleButton = Instance.new("TextButton")
 toggleButton.Name = "ToggleMainGui"
 toggleButton.Size = UDim2.new(0, 45, 0, 45)
 toggleButton.Position = UDim2.new(0, 10, 0, 10)
-toggleButton.Text = ":::"
+toggleButton.Text = "::"
 toggleButton.TextSize = 18
 toggleButton.BackgroundColor3 = Color3.fromRGB(32, 32, 32)
 toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -264,13 +264,13 @@ autoAdjustToggle.MouseButton1Click:Connect(function()
     autoAdjustToggle.BackgroundColor3 = autoAdjustState and Color3.fromRGB(128, 255, 128) or Color3.fromRGB(255, 77, 77)
 end)
 
+-- 😡
+
 local teamsScrolling = Instance.new("ScrollingFrame")
 teamsScrolling.Size = UDim2.new(1, -10, 1, -50)
 teamsScrolling.Position = UDim2.new(0, 5, 0, 45)
 teamsScrolling.BackgroundTransparency = 1
-teamsLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-teamsScrolling.CanvasSize = UDim2.new(0, 0, 0, teamsLayout.AbsoluteContentSize.Y + 10)
-end)
+teamsScrolling.CanvasSize = UDim2.new(0, 0, 0, 0) -- Starts at 0, will auto-update
 teamsScrolling.ScrollBarThickness = 0
 teamsScrolling.Parent = teamsGui
 
@@ -278,6 +278,11 @@ local teamsLayout = Instance.new("UIListLayout")
 teamsLayout.SortOrder = Enum.SortOrder.LayoutOrder
 teamsLayout.Padding = UDim.new(0, 8)
 teamsLayout.Parent = teamsScrolling
+
+-- Automatically update the CanvasSize whenever the list of teams changes or refreshes!
+teamsLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    teamsScrolling.CanvasSize = UDim2.new(0, 0, 0, teamsLayout.AbsoluteContentSize.Y + 10)
+end)
 
 local function initTeams()
     for _, team in ipairs(Teams:GetTeams()) do
@@ -288,6 +293,9 @@ local function initTeams()
         end
     end
 end
+
+-- 🟩
+
 initTeams()
 
 local function refreshTeamList()
