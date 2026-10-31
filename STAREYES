@@ -1,4 +1,4 @@
--- ⬜ Snippet 1: Services, Variables, and Draggable Toggle Button
+-- ⬜ Snippet 1: Services, Variables, and Draggable Toggle Button (Layer Fixed)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -7,13 +7,14 @@ local Teams = game:GetService("Teams")
 local localPlayer = Players.LocalPlayer
 local playerGui = localPlayer:WaitForChild("PlayerGui")
 
--- Create ScreenGui
+-- Create ScreenGui with a high DisplayOrder so it stays above other game UIs
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "StaringContestGui"
 screenGui.ResetOnSpawn = false
+screenGui.DisplayOrder = 999
 screenGui.Parent = playerGui
 
--- Draggable Toggle Button (Top Left)
+-- Draggable Toggle Button (Top Left) with high ZIndex
 local toggleButton = Instance.new("TextButton")
 toggleButton.Name = "ToggleMainGui"
 toggleButton.Size = UDim2.new(0, 45, 0, 45)
@@ -22,6 +23,7 @@ toggleButton.Text = "👁️"
 toggleButton.TextSize = 24
 toggleButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.ZIndex = 10 -- Ensures it renders above everything else in this ScreenGui
 toggleButton.Parent = screenGui
 
 local corner = Instance.new("UICorner")
