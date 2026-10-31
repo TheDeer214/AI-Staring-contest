@@ -195,14 +195,14 @@ local function createInput(name, defaultValue, callback)
     return frame
 end
 
-createToggle("Enable Staring", _G.StaringSettings.Enabled, function(val) _G.StaringSettings.Enabled = val end).Parent = scrollingFrame
-createInput("Accuracy", _G.StaringSettings.Accuracy, function(val) _G.StaringSettings.Accuracy = val end).Parent = scrollingFrame
-createInput("Constraints", _G.StaringSettings.Constraints, function(val) _G.StaringSettings.Constraints = val end).Parent = scrollingFrame
-createInput("Trigger distance", _G.StaringSettings.TriggerDistance, function(val) _G.StaringSettings.TriggerDistance = val end).Parent = scrollingFrame
+createToggle("Enable staring", _G.StaringSettings.Enabled, function(val) _G.StaringSettings.Enabled = val end).Parent = scrollingFrame
+createInput("Lerp speed", _G.StaringSettings.Accuracy, function(val) _G.StaringSettings.Accuracy = val end).Parent = scrollingFrame
+createInput("Detection scale", _G.StaringSettings.Constraints, function(val) _G.StaringSettings.Constraints = val end).Parent = scrollingFrame
+createInput("Detection distance", _G.StaringSettings.TriggerDistance, function(val) _G.StaringSettings.TriggerDistance = val end).Parent = scrollingFrame
 createToggle("Target closest", _G.StaringSettings.TargetClosest, function(val) _G.StaringSettings.TargetClosest = val end).Parent = scrollingFrame
-createToggle("Highlight all players", _G.StaringSettings.HighlightEnabled, function(val) _G.StaringSettings.HighlightEnabled = val end).Parent = scrollingFrame
-createToggle("Count walls", _G.StaringSettings.CountWalls, function(val) _G.StaringSettings.CountWalls = val end).Parent = scrollingFrame
-createToggle("Count NPCs", _G.StaringSettings.CountNPCs, function(val) _G.StaringSettings.CountNPCs = val end).Parent = scrollingFrame
+createToggle("Highlight", _G.StaringSettings.HighlightEnabled, function(val) _G.StaringSettings.HighlightEnabled = val end).Parent = scrollingFrame
+createToggle("Include walls", _G.StaringSettings.CountWalls, function(val) _G.StaringSettings.CountWalls = val end).Parent = scrollingFrame
+createToggle("Include NPCs", _G.StaringSettings.CountNPCs, function(val) _G.StaringSettings.CountNPCs = val end).Parent = scrollingFrame
 
 -- ⬜ Snippet 3: Teams Sub-GUI with Smooth Rounded Buttons and Columns
 local teamsGui = Instance.new("Frame")
