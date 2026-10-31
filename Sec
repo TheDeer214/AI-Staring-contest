@@ -1,4 +1,4 @@
-print("Let's stare v2")
+print("Let's stare")
 
 -- 🟩 Save and load
 local HttpService = game:GetService("HttpService")
