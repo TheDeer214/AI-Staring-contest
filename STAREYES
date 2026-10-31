@@ -58,7 +58,7 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- ⬜ Snippet 2: Main GUI Setup with Count NPCs Toggle
+-- ⬜ Snippet 2: Main GUI Setup with Smooth Rounded Elements
 local mainGui = Instance.new("Frame")
 mainGui.Name = "MainGui"
 mainGui.Size = UDim2.new(0, 440, 0, 280)
@@ -91,7 +91,7 @@ contentContainer.Parent = mainGui
 local scrollingFrame = Instance.new("ScrollingFrame")
 scrollingFrame.Size = UDim2.new(1, 0, 1, 0)
 scrollingFrame.BackgroundTransparency = 1
-scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 520) -- Increased slightly to fit the new toggle
+scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 520)
 scrollingFrame.ScrollBarThickness = 0
 scrollingFrame.Parent = contentContainer
 
@@ -100,7 +100,7 @@ uiLayout.SortOrder = Enum.SortOrder.LayoutOrder
 uiLayout.Padding = UDim.new(0, 10)
 uiLayout.Parent = scrollingFrame
 
--- Global settings table with CountNPCs added (default false)
+-- Global settings table
 _G.StaringSettings = {
     Enabled = true,
     Accuracy = 0,
@@ -139,6 +139,10 @@ local function createToggle(name, defaultState, callback)
     btn.TextSize = 14
     btn.Parent = frame
     
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 6)
+    btnCorner.Parent = btn
+    
     local state = defaultState
     btn.MouseButton1Click:Connect(function()
         state = not state
@@ -175,6 +179,10 @@ local function createInput(name, defaultValue, callback)
     textBox.TextSize = 14
     textBox.Parent = frame
     
+    local textCorner = Instance.new("UICorner")
+    textCorner.CornerRadius = UDim.new(0, 6)
+    textCorner.Parent = textBox
+    
     textBox.FocusLost:Connect(function()
         local val = tonumber(textBox.Text)
         if val then
@@ -196,7 +204,7 @@ createToggle("Highlight all players", _G.StaringSettings.HighlightEnabled, funct
 createToggle("Count walls", _G.StaringSettings.CountWalls, function(val) _G.StaringSettings.CountWalls = val end).Parent = scrollingFrame
 createToggle("Count NPCs", _G.StaringSettings.CountNPCs, function(val) _G.StaringSettings.CountNPCs = val end).Parent = scrollingFrame
 
--- ⬜ Snippet 3: Teams Sub-GUI with Auto-Adjust Toggle next to X Button
+-- ⬜ Snippet 3: Teams Sub-GUI with Smooth Rounded Buttons and Columns
 local teamsGui = Instance.new("Frame")
 teamsGui.Name = "TeamsGui"
 teamsGui.Size = UDim2.new(1, 0, 1, 0)
@@ -213,6 +221,10 @@ openTeamsBtn.Font = Enum.Font.SourceSansBold
 openTeamsBtn.TextSize = 16
 openTeamsBtn.Parent = scrollingFrame
 
+local openTeamsCorner = Instance.new("UICorner")
+openTeamsCorner.CornerRadius = UDim.new(0, 8)
+openTeamsCorner.Parent = openTeamsBtn
+
 local backBtn = Instance.new("TextButton")
 backBtn.Name = "BackBtn"
 backBtn.Size = UDim2.new(0, 35, 0, 35)
@@ -223,6 +235,10 @@ backBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 backBtn.Font = Enum.Font.SourceSansBold
 backBtn.TextSize = 18
 backBtn.Parent = teamsGui
+
+local backCorner = Instance.new("UICorner")
+backCorner.CornerRadius = UDim.new(0, 6)
+backCorner.Parent = backBtn
 
 -- Auto-adjust toggle next to the X button
 local autoAdjustToggle = Instance.new("TextButton")
@@ -263,7 +279,6 @@ teamsLayout.SortOrder = Enum.SortOrder.LayoutOrder
 teamsLayout.Padding = UDim.new(0, 8)
 teamsLayout.Parent = teamsScrolling
 
--- Initial one-time selection at execution startup
 local function initTeams()
     for _, team in ipairs(Teams:GetTeams()) do
         if team ~= localPlayer.Team then
@@ -290,6 +305,10 @@ local function refreshTeamList()
         tBtn.TextSize = 14
         tBtn.Parent = teamsScrolling
         
+        local tCorner = Instance.new("UICorner")
+        tCorner.CornerRadius = UDim.new(0, 6)
+        tCorner.Parent = tBtn
+        
         tBtn.MouseButton1Click:Connect(function()
             local current = _G.StaringSettings.SelectedTeams[team.Name] == true
             _G.StaringSettings.SelectedTeams[team.Name] = not current
@@ -310,7 +329,6 @@ backBtn.MouseButton1Click:Connect(function()
     scrollingFrame.Visible = true
 end)
 
--- Continuous background check for Auto-adjust loop
 RunService.RenderStepped:Connect(function()
     if _G.StaringSettings.AutoAdjust and localPlayer.Team then
         for _, team in ipairs(Teams:GetTeams()) do
@@ -320,7 +338,6 @@ RunService.RenderStepped:Connect(function()
                 _G.StaringSettings.SelectedTeams[team.Name] = true
             end
         end
-        -- Refresh visual list live if the teams menu is currently open
         if teamsGui.Visible then
             refreshTeamList()
         end
