@@ -270,7 +270,7 @@ backBtn.MouseButton1Click:Connect(function()
     scrollingFrame.Visible = true
 end)
 
--- ⬜ Snippet 4: Core Logic for Staring, Highlighting, and Wall Checks (Updated)
+-- ⬜ Snippet 4: Core Logic for Staring, Highlighting (Team Tinted Outline), and Wall Checks
 local camera = workspace.CurrentCamera
 local highlights = {}
 
@@ -289,10 +289,12 @@ local function applyHighlight(player, char)
         hl.Parent = char
         highlights[player] = hl
         
-        -- Update color based on team
+        -- Update colors based on team
         if player.Team and player.Team.TeamColor then
-            hl.FillColor = player.Team.TeamColor.Color
-            hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+            local teamColor = player.Team.TeamColor.Color
+            hl.FillColor = teamColor
+            -- Outline is the same team color, but mixed with white to make it significantly whiter/brighter
+            hl.OutlineColor = teamColor:Lerp(Color3.fromRGB(255, 255, 255), 0.6)
         end
     end
 end
